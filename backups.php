@@ -27,8 +27,8 @@ class DevelopmentSyncing {
 
                 WP_CLI::add_command( 'logflume check_credentials', array( $this, 'check_credentials' ) );
                 WP_CLI::add_command( 'logflume select_bucket', array( $this, 'select_bucket' ) );
-                WP_CLI::add_command( 'logflume sync', array( $this, 'sync' ) );
-                WP_CLI::add_command( 'logflume backup_wordpress', array( $this, 'backup_wordpress' ) );
+                // WP_CLI::add_command( 'logflume sync', array( $this, 'backup' ) );
+                WP_CLI::add_command( 'logflume backup_database', array( $this, 'backup_wordpress' ) );
                 WP_CLI::add_command( 'logflume create_bucket', array( $this, 'create_bucket' ) );
                 WP_CLI::add_command( 'logflume autodelete_sql', array( $this, 'add_lifecycle' ) );
 
@@ -42,10 +42,10 @@ class DevelopmentSyncing {
 
         $s3 = new S3Client([
             'version'     => 'latest',
-            'region'      => LOG_FLUME_REGION,
+            'region'      => BACKUPS_REGION,
             'credentials' => [
-                'key'    => LOG_FLUME_ACCESS_KEY_ID,
-                'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
+                'key'    => BACKUPS_ACCESS_KEY_ID,
+                'secret' => BACKUPS_SECRET_ACCESS_KEY,
             ],
         ]);
 
@@ -53,15 +53,15 @@ class DevelopmentSyncing {
     }
 
 	private function check_config_details_exist(){
-        if ( !defined('LOG_FLUME_ACCESS_KEY_ID') || !defined('LOG_FLUME_SECRET_ACCESS_KEY') || !defined('LOG_FLUME_REGION') || LOG_FLUME_ACCESS_KEY_ID == "" || LOG_FLUME_SECRET_ACCESS_KEY == "" || LOG_FLUME_REGION == "" ) {
+        if ( !defined('BACKUPS_ACCESS_KEY_ID') || !defined('BACKUPS_SECRET_ACCESS_KEY') || !defined('BACKUPS_REGION') || BACKUPS_ACCESS_KEY_ID == "" || BACKUPS_SECRET_ACCESS_KEY == "" || BACKUPS_REGION == "" ) {
 
             echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
 
             // Add config details
             echo WP_CLI::colorize( "%YAdd these new config details to your wp-config file:%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_REGION','eu-west-2'); // eu-west-2 is London%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_ACCESS_KEY_ID','');%n\n");
-            echo WP_CLI::colorize( "%Ydefine('LOG_FLUME_SECRET_ACCESS_KEY','');%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_REGION','eu-west-2'); // eu-west-2 is London%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_ACCESS_KEY_ID','');%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_SECRET_ACCESS_KEY','');%n\n");
             echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
             echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n\n\n");
 
@@ -224,10 +224,10 @@ class DevelopmentSyncing {
      *     Success: Sync the media and upload the db
      *
      */
-    function backup_wordpress( $args, $assoc_args ) {
+    function backup_database( $args, $assoc_args ) {
 
         // Sync media up to S3
-        $this->sync([], ['direction' => 'up'] );
+        // $this->sync([], ['direction' => 'up'] );
 
         // Backup DB
         $this->backup_database();
@@ -286,10 +286,10 @@ class DevelopmentSyncing {
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => LOG_FLUME_REGION,
+			'region'      => BACKUPS_REGION,
 			'credentials' => [
-				'key'    => LOG_FLUME_ACCESS_KEY_ID,
-				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
+				'key'    => BACKUPS_ACCESS_KEY_ID,
+				'secret' => BACKUPS_SECRET_ACCESS_KEY,
 			],
 		]);
 
@@ -365,10 +365,10 @@ class DevelopmentSyncing {
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => LOG_FLUME_REGION,
+			'region'      => BACKUPS_REGION,
 			'credentials' => [
-				'key'    => LOG_FLUME_ACCESS_KEY_ID,
-				'secret' => LOG_FLUME_SECRET_ACCESS_KEY,
+				'key'    => BACKUPS_ACCESS_KEY_ID,
+				'secret' => BACKUPS_SECRET_ACCESS_KEY,
 			],
 		]);
 

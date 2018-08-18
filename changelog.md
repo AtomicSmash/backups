@@ -1,5 +1,8 @@
 # Changelog
 
+= 1.2.0 =
+* Project renamed to 'Backups'
+
 = 1.1.0 =
 * Simplified installation steps
 * Made command only available if LOGFLUME config is present

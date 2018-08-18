@@ -1,16 +1,12 @@
-![log-flume-logo](https://cloud.githubusercontent.com/assets/1636310/24171665/407f51a2-0e7d-11e7-974f-f80e0c45e1ed.jpg)
+This is for backing up WordPress websites to Amazon S3.
 
-This allows developers to sync WordPress media libraries between machines over Amazon S3.
-
-It can also be used for backing up websites or even moving websites between servers
-
-### How Log Flume talks to S3
+### How 'Backups' talks to S3
 
 The setup will ask you to add these constants to your wp-config.php file:
 
-- LOG_FLUME_REGION
-- LOG_FLUME_ACCESS_KEY_ID
-- LOG_FLUME_SECRET_ACCESS_KEY
+- BACKUPS_REGION
+- BACKUPS_ACCESS_KEY_ID
+- BACKUPS_SECRET_ACCESS_KEY
 
 You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
@@ -19,13 +15,13 @@ You can obtain these details by creating an IAM user. Here is [our guide](https:
 #### 1. Add the Wordpress plugin to your composer file by navigating to your project and running this inside a terminal:
 
 ```
-composer require logsmith/log-flume
+composer require atomicsmash/backups
 ```
 
 #### 2. Activate the plugin via the admin interface, or just run:
 
 ```
-wp plugin activate log-flume
+wp plugin activate backups
 ```
 
 #### 3. Add your credentials to your wp-config file.
@@ -33,21 +29,21 @@ wp plugin activate log-flume
 And these constants to your wp-config file:
 
 ```
-define('LOG_FLUME_REGION','eu-west-2'); //London
-define('LOG_FLUME_ACCESS_KEY_ID','');
-define('LOG_FLUME_SECRET_ACCESS_KEY','');
+define('BACKUPS_REGION','eu-west-2'); //London
+define('BACKUPS_ACCESS_KEY_ID','');
+define('BACKUPS_SECRET_ACCESS_KEY','');
 ```
 
 #### 4. Then finally run (you will need the constants above):
 
 ```
-wp logflume check_credentials
+wp backups check_credentials
 ```
 
-#### 5. If the check is successful, you can start the log flume setup:
+#### 5. If the check is successful, you can start the 'backups' setup:
 
 ```
-wp logflume create_bucket <bucket_name>
+wp backups create_bucket <bucket_name>
 ```
 
 `bucket_name` is usually the address of the site you are currently working on ('website.local')
@@ -57,7 +53,7 @@ You will also be asked `Create bucket? [y/n]` - supply 'y' if this is a fresh se
 #### 6. Time to sync!
 
 ```
-wp logflume sync
+wp backups backup
 ```
 
 Bucket name is usually the address of the site you are currently using
