@@ -17,7 +17,7 @@ use Aws\S3\Exception\S3Exception;
 /**
  * Sync media across development machines and backup websites
  */
-class DevelopmentSyncing {
+class WordPressBackups {
 
     function __construct() {
 
@@ -25,12 +25,12 @@ class DevelopmentSyncing {
 
             if( $this->check_config_details_exist() == true ){
 
-                WP_CLI::add_command( 'logflume check_credentials', array( $this, 'check_credentials' ) );
-                WP_CLI::add_command( 'logflume select_bucket', array( $this, 'select_bucket' ) );
+                WP_CLI::add_command( 'backup check_credentials', array( $this, 'check_credentials' ) );
+                WP_CLI::add_command( 'backup select_bucket', array( $this, 'select_bucket' ) );
                 // WP_CLI::add_command( 'logflume sync', array( $this, 'backup' ) );
-                WP_CLI::add_command( 'logflume backup_database', array( $this, 'backup_wordpress' ) );
-                WP_CLI::add_command( 'logflume create_bucket', array( $this, 'create_bucket' ) );
-                WP_CLI::add_command( 'logflume autodelete_sql', array( $this, 'add_lifecycle' ) );
+                WP_CLI::add_command( 'backup backup_database', array( $this, 'backup_database' ) );
+                WP_CLI::add_command( 'backup create_bucket', array( $this, 'create_bucket' ) );
+                WP_CLI::add_command( 'backup autodelete_sql', array( $this, 'add_lifecycle' ) );
 
             }
 
@@ -224,15 +224,15 @@ class DevelopmentSyncing {
      *     Success: Sync the media and upload the db
      *
      */
-    function backup_database( $args, $assoc_args ) {
-
-        // Sync media up to S3
-        // $this->sync([], ['direction' => 'up'] );
-
-        // Backup DB
-        $this->backup_database();
-
-    }
+    // function backup_database( $args, $assoc_args ) {
+    //
+    //     // Sync media up to S3
+    //     // $this->sync([], ['direction' => 'up'] );
+    //
+    //     // Backup DB
+    //     $this->backup_the_database();
+    //
+    // }
 
     /**
      * Sync files to S3. You can also just sync in one direction, this is good for backups
@@ -454,7 +454,7 @@ class DevelopmentSyncing {
     /*
      * Backup a website database
      */
-    private function backup_database(){
+    public function backup_database(){
 
         $wp_upload_dir = wp_upload_dir();
 
@@ -560,4 +560,4 @@ class DevelopmentSyncing {
 
 }
 
-$log_flume = new DevelopmentSyncing;
+$backups = new WordPressBackups;
