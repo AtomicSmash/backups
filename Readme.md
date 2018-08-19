@@ -8,7 +8,7 @@ The setup will ask you to add these constants to your wp-config.php file:
 - BACKUPS_ACCESS_KEY_ID
 - BACKUPS_SECRET_ACCESS_KEY
 
-You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
+You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
 ## Installation
 
@@ -58,7 +58,7 @@ wp backups backup
 
 Bucket name is usually the address of the site you are currently using
 
-## Using log-flume to backup a live website
+## Backup a live website
 
 Log-flume can be used to backup a live site as well as sync development assets.
 

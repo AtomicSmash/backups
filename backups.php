@@ -3,7 +3,7 @@
 Plugin Name: Backups
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Backup your site to Amazon S3
-Version: 0.2.0
+Version: 0.0.1
 Author: Atomic Smash
 Author URI: http://www.atomicsmash.co.uk
 */
@@ -53,9 +53,9 @@ class Backups_Commands extends \WP_CLI_Command {
             echo WP_CLI::colorize( "%Ydefine('BACKUPS_ACCESS_KEY_ID','');%n\n");
             echo WP_CLI::colorize( "%Ydefine('BACKUPS_SECRET_ACCESS_KEY','');%n\n");
             echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
-            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n\n\n");
+            echo WP_CLI::colorize( "%r'wp backups create_bucket'%n\n\n");
 
-            echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/logsmith/log-flume/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
+            echo WP_CLI::colorize( "%YIf you need help, visit https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials to learn how to create an IAM user.%n\n");
 
             return false;
         }else{
@@ -64,7 +64,7 @@ class Backups_Commands extends \WP_CLI_Command {
     }
 
     /**
-     * Setup Log Flume bucket and create lifecycle policy.
+     * Setup Backups bucket and create lifecycle policy.
      *
      * ## OPTIONS
      *
@@ -84,20 +84,19 @@ class Backups_Commands extends \WP_CLI_Command {
 
         WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
-        // If 'Y' create logflume bucket
+        // If 'Y' create backup bucket
         if( isset( $assoc_args['continue'] )){
             $s3 = $this->connect_to_s3();
-            // Create standard logflume bucket
-            // $creation_success = $this->create_s3_bucket( $s3, $bucket_name, '.logflume' );
 
             $creation_success = true;
 
+            // Create standard backup bucket
             try {
                 $result = $s3->createBucket([
-                    'Bucket' => $bucket_name . ".logflume"
+                    'Bucket' => $bucket_name . ".backups"
                 ]);
             } catch (Aws\S3\Exception\S3Exception $e) {
-                echo WP_CLI::colorize( "%rThere was a problem creating Log Flume buckets. The bucket might already exist 🤔%n\n");
+                echo WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
                 $creation_success = false;
             }
 
@@ -105,8 +104,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
         if( $creation_success == true ){
 
-            update_option( 'logflume_s3_selected_bucket', $bucket_name . '.logflume', 0 );
-            echo WP_CLI::success( "Log Flume bucket created and selected 👌");
+            update_option( 'backups_s3_selected_bucket', $bucket_name . '.backups', 0 );
+            echo WP_CLI::success( "Backups bucket created and selected 👌");
 
         }
     }
@@ -152,7 +151,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
         //ASTODO This get_option could be a helper
-		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
 
 		if( $this->check_config_details_exist() == false ){
@@ -162,16 +161,13 @@ class Backups_Commands extends \WP_CLI_Command {
 		// Check to see if there user is trying to set a specific bucket
 		if( isset( $args[0] )){
 			$selected_s3_bucket = $args[0];
-			update_option( 'logflume_s3_selected_bucket', $selected_s3_bucket, 0 );
+			update_option( 'backups_s3_selected_bucket', $selected_s3_bucket, 0 );
 			WP_CLI::success( "Selected bucket updated" );
 		}
 
 		// Test if bucket has not yet been selected
 		if( $selected_s3_bucket == "" ){
 			echo WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
-			// echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
-			// echo WP_CLI::colorize( "%Y%n\n");
-            // return false;
 		}
 
 		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
@@ -263,7 +259,7 @@ class Backups_Commands extends \WP_CLI_Command {
             }
         }
 
-		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
 
 		// if( $this->check_config_details_exist() == false ){
@@ -272,9 +268,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
+            echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
             echo WP_CLI::colorize( "%Y%n or ");
-            echo WP_CLI::colorize( "%r'wp logflume select_bucket'%n");
+            echo WP_CLI::colorize( "%r'wp backups select_bucket'%n");
             echo WP_CLI::colorize( "%Y%n\n");
             return false;
         }
@@ -357,7 +353,7 @@ class Backups_Commands extends \WP_CLI_Command {
 	private function find_files_to_sync(){
 
 		// These need to be reduced
-		$selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
 		$ignore = array("DS_Store","htaccess");
 
@@ -483,7 +479,7 @@ class Backups_Commands extends \WP_CLI_Command {
         $s3 = $this->connect_to_s3();
 
         //ASTODO centralise this get option, once it's centalised there will be a way of overriding it via config
-        $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+        $selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
         //ASTODO check to see if backup actually worked
         if( $selected_s3_bucket != "" ){
@@ -535,11 +531,11 @@ class Backups_Commands extends \WP_CLI_Command {
      */
     private function add_lifecycle( $args, $assoc_args ){
 
-        $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
+        $selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-            echo WP_CLI::colorize( "%r'wp logflume create_bucket'%n");
+            echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
             echo WP_CLI::colorize( "%Y%n\n");
             return false;
         }
