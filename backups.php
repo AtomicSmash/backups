@@ -112,21 +112,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
 
     /**
-     * Delete an option from the database.
-     *
-     * Returns an error if the option didn't exist.
-     *
-     * ## OPTIONS
-     *
-     * <key>
-     * : Key for the option.
-     *
-     * ## EXAMPLES
-     *
-     *     $ wp option delete my_option
-     *     Success: Deleted 'my_option' option.
+     * Check to see if there are working AWS creds
      */
-    function check_credentials(){
+    public function check_credentials(){
 
         if( $this->check_config_details_exist() == false ){
 			return WP_CLI::error( "Config details missing" );
@@ -137,12 +125,12 @@ class Backups_Commands extends \WP_CLI_Command {
     	try {
             $result = $s3->listBuckets(array());
         } catch(Aws\S3\Exception\S3Exception $e) {
-            echo WP_CLI::warning( "There was an error connecting to S3 😣\n\nThis was the error:\n" );
+            echo \WP_CLI::warning( "There was an error connecting to S3 😣\n\nThis was the error:\n" );
             echo $e->getAwsErrorCode()."\n";
             return false;
         };
 
-        return WP_CLI::success( "Connection to S3 was successfull 😄");
+        return \WP_CLI::success( "Connection to S3 was successfull 😄");
 
     }
 
