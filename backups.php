@@ -1,42 +1,32 @@
 <?php
 /*
-Plugin Name: Log Flume
+Plugin Name: Backups
 Plugin URI: http://www.atomicsmash.co.uk
-Description: Sync development media files to Amazon S3
-Version: 1.1.0
-Author: David Darke
+Description: Backup your site to Amazon S3
+Version: 0.2.0
+Author: Atomic Smash
 Author URI: http://www.atomicsmash.co.uk
 */
 
-if (!defined('ABSPATH'))exit; //Exit if accessed directly
+namespace BACKUPS;
 
+if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
-/**
- * Sync media across development machines and backup websites
- */
-class WordPressBackups {
+ /**
+  * Backup functionality
+  *
+  * @package wp-cli
+  * @subpackage commands/third-party
+  */
+class Backups_Commands extends \WP_CLI_Command {
 
-    function __construct() {
-
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-
-            if( $this->check_config_details_exist() == true ){
-
-                WP_CLI::add_command( 'backup check_credentials', array( $this, 'check_credentials' ) );
-                WP_CLI::add_command( 'backup select_bucket', array( $this, 'select_bucket' ) );
-                // WP_CLI::add_command( 'logflume sync', array( $this, 'backup' ) );
-                WP_CLI::add_command( 'backup backup_database', array( $this, 'backup_database' ) );
-                WP_CLI::add_command( 'backup create_bucket', array( $this, 'create_bucket' ) );
-                WP_CLI::add_command( 'backup autodelete_sql', array( $this, 'add_lifecycle' ) );
-
-            }
-
-        };
-
-    }
+    // function __construct() {
+    //     if( $this->check_config_details_exist() == true ){
+    //     }
+    // }
 
 	private function connect_to_s3(){
 
@@ -123,9 +113,19 @@ class WordPressBackups {
 
 
     /**
-     * Checks to see if the current S3 configs are currently working
-     * This command will only appear in config details have been set
-     * @return [type] [description]
+     * Delete an option from the database.
+     *
+     * Returns an error if the option didn't exist.
+     *
+     * ## OPTIONS
+     *
+     * <key>
+     * : Key for the option.
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp option delete my_option
+     *     Success: Deleted 'my_option' option.
      */
     function check_credentials(){
 
@@ -248,7 +248,7 @@ class WordPressBackups {
      *     Success: Will sync all uploads to S3
      *
      */
-	function sync( $args, $assoc_args ) {
+	private function sync( $args, $assoc_args ) {
 
         // Check to make sure direction is set and is valid
         if( ! isset( $assoc_args['direction'] ) ){
@@ -452,16 +452,25 @@ class WordPressBackups {
 	}
 
     /*
-     * Backup a website database
+     * Backup a WordPress website
      */
-    public function backup_database(){
+    public function backup( $args, $assoc_args){
+
+        // echo "<pre>";
+        // print_r($args);
+        // echo "</pre>";
+        // echo "<pre>";
+        // print_r($assoc_args);
+        // echo "</pre>";
+        // die();
+
 
         $wp_upload_dir = wp_upload_dir();
 
         // Check to see if the backup folder exists
-        if (!file_exists( $wp_upload_dir['basedir'] . "/logflume-backups/" )) {
-            mkdir( $wp_upload_dir['basedir'] . "/logflume-backups/" ,0755 );
-            echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/logflume-backups/' was successfully created.%n\n");
+        if (!file_exists( $wp_upload_dir['basedir'] . "/database-backups/" )) {
+            mkdir( $wp_upload_dir['basedir'] . "/database-backups/" ,0755 );
+            echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
         };
 
         // generate a hash based on the date and a random number
@@ -469,7 +478,7 @@ class WordPressBackups {
 
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
-        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
+        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
 
         $s3 = $this->connect_to_s3();
 
@@ -487,7 +496,7 @@ class WordPressBackups {
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
                     'Key'    => "sql-backups/".date('d-m-Y--h:i:s').".sql",
-                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename
+                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename
                 ));
 
                 $success = true;
@@ -497,12 +506,17 @@ class WordPressBackups {
     		}
 
             // If successfully transfered, delete local copy
-            if( $success == true ){
-                $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/logflume-backups/" . $hashed_filename );
-                return WP_CLI::success( "DB backup complete! 🎉" );
-            }
 
         }
+
+        $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename );
+        if( $success == true ){
+            return \WP_CLI::success( "DB backup complete! 🎉" );
+        }else{
+            return \WP_CLI::error( "There was an issue backing up the database" );
+        }
+
+
     }
 
     /**
@@ -519,7 +533,7 @@ class WordPressBackups {
      *     Success: Will sync all uploads to S3
      *
      */
-    function add_lifecycle( $args, $assoc_args ){
+    private function add_lifecycle( $args, $assoc_args ){
 
         $selected_s3_bucket = get_option('logflume_s3_selected_bucket');
 
@@ -560,4 +574,7 @@ class WordPressBackups {
 
 }
 
-$backups = new WordPressBackups;
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
+};
