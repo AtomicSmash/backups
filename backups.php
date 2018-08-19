@@ -150,15 +150,15 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( isset( $args[0] )){
 			$selected_s3_bucket = $args[0];
 			update_option( 'backups_s3_selected_bucket', $selected_s3_bucket, 0 );
-			WP_CLI::success( "Selected bucket updated" );
+			\WP_CLI::success( "Selected bucket updated" );
 		}
 
 		// Test if bucket has not yet been selected
 		if( $selected_s3_bucket == "" ){
-			echo WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
+			echo \WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
 		}
 
-		echo WP_CLI::colorize( "%YAvailable buckets:%n\n");
+		echo \WP_CLI::colorize( "%YAvailable buckets:%n\n");
 
         $s3 = $this->connect_to_s3();
 
@@ -183,18 +183,18 @@ class Backups_Commands extends \WP_CLI_Command {
 
 				if( $bucket['Name'] == $selected_s3_bucket ){
 					$selected_bucket_check = 1;
-					echo WP_CLI::colorize( "%r - currently selected%n");
+					echo \WP_CLI::colorize( "%r - currently selected%n");
 				};
 
 				echo "\n";
 			}
 
 		}else{
-			return WP_CLI::error( "Error connecting to Amazon S3, please check your credentials." );
+			return \WP_CLI::error( "Error connecting to Amazon S3, please check your credentials." );
 		}
 
 		if( $selected_bucket_check == 0 && $selected_s3_bucket != "" ){
-			return WP_CLI::error( "There is a selected bucket (". $selected_s3_bucket ."), but it doesn't seem to exits on S3?" );
+			return \WP_CLI::error( "There is a selected bucket (". $selected_s3_bucket ."), but it doesn't seem to exits on S3?" );
 		}
 
 	}
