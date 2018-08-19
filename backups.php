@@ -199,24 +199,6 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	}
 
-    /**
-     * Sync files to S3. Then export the db and upload
-     *
-     * ## EXAMPLES
-     *
-     *     $ wp backup
-     *     Success: Sync the media and upload the db
-     *
-     */
-    // function backup_database( $args, $assoc_args ) {
-    //
-    //     // Sync media up to S3
-    //     // $this->sync([], ['direction' => 'up'] );
-    //
-    //     // Backup DB
-    //     $this->backup_the_database();
-    //
-    // }
 
     /**
      * Sync files to S3. You can also just sync in one direction, this is good for backups
@@ -232,7 +214,7 @@ class Backups_Commands extends \WP_CLI_Command {
      *     Success: Will sync all uploads to S3
      *
      */
-	private function sync( $args, $assoc_args ) {
+	private function sync_media( $args, $assoc_args ) {
 
         // Check to make sure direction is set and is valid
         if( ! isset( $assoc_args['direction'] ) ){
@@ -557,7 +539,6 @@ class Backups_Commands extends \WP_CLI_Command {
     }
 
 }
-
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
