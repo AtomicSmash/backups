@@ -82,7 +82,7 @@ class Backups_Commands extends \WP_CLI_Command {
         // Get bucket name
         $bucket_name = $args[0];
 
-        WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
+        \WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
 
         // If 'Y' create backup bucket
         if( isset( $assoc_args['continue'] )){
@@ -95,8 +95,8 @@ class Backups_Commands extends \WP_CLI_Command {
                 $result = $s3->createBucket([
                     'Bucket' => $bucket_name . ".backups"
                 ]);
-            } catch (Aws\S3\Exception\S3Exception $e) {
-                echo WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
+            } catch (\Aws\S3\Exception\S3Exception $e) {
+                echo \WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
                 $creation_success = false;
             }
 
@@ -105,7 +105,7 @@ class Backups_Commands extends \WP_CLI_Command {
         if( $creation_success == true ){
 
             update_option( 'backups_s3_selected_bucket', $bucket_name . '.backups', 0 );
-            echo WP_CLI::success( "Backups bucket created and selected 👌");
+            \WP_CLI::success( "Backups bucket created and selected 👌");
 
         }
     }
