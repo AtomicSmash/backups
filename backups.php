@@ -134,7 +134,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
     }
 
-	function select_bucket( $args ){
+	public function select_bucket( $args ){
 
 		$connected_to_S3 = true;
 		$selected_bucket_check = 0;
@@ -425,9 +425,9 @@ class Backups_Commands extends \WP_CLI_Command {
         // echo "<pre>";
         // print_r($args);
         // echo "</pre>";
-        // echo "<pre>";
-        // print_r($assoc_args);
-        // echo "</pre>";
+        echo "<pre>";
+        print_r($assoc_args);
+        echo "</pre>";
         // die();
 
 

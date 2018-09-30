@@ -1,5 +1,15 @@
 This is for backing up WordPress websites to Amazon S3.
 
+TODO
+
+- Create central 'backup' command that can except --args like 'full-site', 'database', 'media'
+- Add sync features with offload S3
+
+### Plugin features
+
+
+
+
 ### How 'Backups' talks to S3
 
 The setup will ask you to add these constants to your wp-config.php file:
