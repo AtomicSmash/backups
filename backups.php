@@ -10,17 +10,14 @@ Author URI: http://www.atomicsmash.co.uk
 
 namespace BACKUPS;
 
-if (!defined('ABSPATH'))exit; //Exit if accessed directly
-
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
- /**
-  * Backup functionality
-  *
-  * @package wp-cli
-  * @subpackage commands/third-party
-  */
+if (!defined('ABSPATH'))exit; //Exit if accessed directly
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+
+
 class Backups_Commands extends \WP_CLI_Command {
 
     // function __construct() {
@@ -425,9 +422,9 @@ class Backups_Commands extends \WP_CLI_Command {
         // echo "<pre>";
         // print_r($args);
         // echo "</pre>";
-        echo "<pre>";
-        print_r($assoc_args);
-        echo "</pre>";
+        // echo "<pre>";
+        // print_r($assoc_args);
+        // echo "</pre>";
         // die();
 
 
@@ -540,6 +537,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 }
 
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
+
+\WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
+
 };
