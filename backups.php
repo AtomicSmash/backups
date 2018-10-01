@@ -15,7 +15,8 @@ use Aws\S3\Exception\S3Exception;
 
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
-if ( defined( 'WP_CLI' ) && WP_CLI ) {
+if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
+
 
 /**
  * Backup your WordPress site
