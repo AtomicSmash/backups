@@ -17,13 +17,23 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
-
+/**
+ * Backup your WordPress site
+ *
+ * <message>
+ * : An awesome message to display
+ *
+ * --append=<message>
+ * : An awesome message to append to the original message.
+ *
+ * @when before_wp_load
+ */
 class Backups_Commands extends \WP_CLI_Command {
 
-    // function __construct() {
+    // public function __construct() {
     //     if( $this->check_config_details_exist() == true ){
     //     }
-    // }
+	// }
 
 	private function connect_to_s3(){
 
@@ -74,7 +84,7 @@ class Backups_Commands extends \WP_CLI_Command {
      *     Success: This is will setup a new bucket and add a lifecycle policy of
      *     40 days for the SQL folder.
      */
-    function create_bucket( $args, $assoc_args ){
+    public function create_bucket( $args, $assoc_args ){
 
         // Get bucket name
         $bucket_name = $args[0];
@@ -196,6 +206,44 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	}
 
+
+	public function backup( $args, $assoc_args){
+
+		// echo "<pre>";
+		// print_r($assoc_args);
+		// echo "</pre>";
+
+		if( empty( $assoc_args ) ){
+			return \WP_CLI::line( "You haven't prefined what to sync. So using default (media + db) 😎" );
+		}
+
+
+		// $this->
+
+		//full-site
+		//database
+		//media
+
+	}
+
+	/**
+     * Two way transfer
+     *
+	 * ## OPTIONS
+     *
+     * <what_to_sync>
+     * : Name of bucket to create
+     *
+     * ## EXAMPLES
+     *
+     *     $ wp option wordpress.dev 40
+     *     Success: This is will setup a new bucket and add a lifecycle policy of
+     *     40 days for the SQL folder.
+	 */
+	public function sync( $args, $assoc_args){
+
+
+	}
 
     /**
      * Sync files to S3. You can also just sync in one direction, this is good for backups
@@ -417,7 +465,7 @@ class Backups_Commands extends \WP_CLI_Command {
     /*
      * Backup a WordPress website
      */
-    public function backup( $args, $assoc_args){
+    private function backup_database( $args, $assoc_args){
 
         // echo "<pre>";
         // print_r($args);
@@ -537,7 +585,20 @@ class Backups_Commands extends \WP_CLI_Command {
 
 }
 
-
+/**
+ * Add life cycle policy to the SQL folder. This will help reduce file build up
+ *
+ * ## OPTIONS
+ *
+ * <number_of_days>
+ * : Name of bucket to create
+ *
+ * ## EXAMPLES
+ *
+ *     $ wp add_lifecycle
+ *     Success: Will sync all uploads to S3
+ *
+ */
 \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
 
 };
