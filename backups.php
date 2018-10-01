@@ -207,18 +207,18 @@ class Backups_Commands extends \WP_CLI_Command {
 	}
 
 
-	public function backup( $args, $assoc_args){
+	public function backup( $args, $assoc_args ){
 
 		// echo "<pre>";
 		// print_r($assoc_args);
 		// echo "</pre>";
 
 		if( empty( $assoc_args ) ){
-			return \WP_CLI::line( "You haven't prefined what to sync. So using default (media + db) 😎" );
+			\WP_CLI::line( "You haven't prefined what to sync. So using default (media + db) 😎" );
 		}
 
 
-		// $this->
+		$this->backup_database( $args, $assoc_args );
 
 		//full-site
 		//database
