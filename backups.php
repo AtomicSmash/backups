@@ -5,7 +5,7 @@ Plugin URI: http://www.atomicsmash.co.uk
 Description: Backup your site to Amazon S3
 Version: 0.0.1
 Author: Atomic Smash
-Author URI: http://www.atomicsmash.co.uk
+Author URI: https://www.atomicsmash.co.uk
 */
 
 namespace BACKUPS;
@@ -206,37 +206,43 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	}
 
-	//full-site
-	//database
-	//media
-
+	/**
+     * Copy files to S3. You can choose whether to sync the DB, files or both.
+     *
+     * ## OPTIONS
+     *
+     * [--type=<type>]
+     * : What would you likw to sync? All,database or media.
+     *
+     * ## EXAMPLES
+     *
+	 *     $ wp backups backup
+     *     Success: Will sync media and database to S3
+     *
+	 *     $ wp backups backup --type=all
+	 *     Success: Will sync media and database to S3
+     *
+     *     $ wp backups backup --type=database
+	 *     Success: Will sync the database to S3
+     *
+     *     $ wp backups backup --type=media
+	 *     Success: Will sync media to S3
+     *
+     */
 	public function backup( $args, $assoc_args ){
-
-		// echo "<pre>";
-		// print_r($assoc_args);
-		// echo "</pre>";
 
 		if( empty( $assoc_args ) ){
 			\WP_CLI::line( "You haven't defined what to sync. So using backing up media and database 🤓" );
+			$assoc_args['type'] = "all";
 		}
 
+		if( $assoc_args['type'] == "all" || $assoc_args['type'] == "database" ){
+			$this->backup_database( $args, $assoc_args );
+		}
 
-		// $this->backup_database( $args, $assoc_args );
-
-		// if( ! isset( $assoc_args['direction'] ) ){
-		//     $direction = 'both';
-		// }else{
-		//     if( $assoc_args['direction'] == 'up' ){
-		//         $direction = 'up';
-		//     }else if( $assoc_args['direction'] == 'down' ){
-		//         $direction = 'down';
-		//     }else{
-		//         WP_CLI::error( "Please only provide 'up' or 'down' as a direction" );
-		//     }
-		// }
-
-		$this->backup_media( $args, $assoc_args );
-
+		if( $assoc_args['type'] == "all" || $assoc_args['type'] == "media" ){
+			$this->backup_media( $args, $assoc_args );
+		}
 
 	}
 
@@ -380,10 +386,13 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( count( $iterator ) > 0 ){
 			foreach ($iterator as $object) {
 
-				$found_files_remotely[] = $object['Key'];
+				if ( strpos( $object['Key'], 'sql-backup' ) === false ) {
+					$found_files_remotely[] = $object['Key'];
+				}
 
 			}
 		}
+
 
 		$wp_upload_dir = wp_upload_dir();
 
@@ -460,7 +469,7 @@ class Backups_Commands extends \WP_CLI_Command {
         // Check to see if the backup folder exists
         if (!file_exists( $wp_upload_dir['basedir'] . "/database-backups/" )) {
             mkdir( $wp_upload_dir['basedir'] . "/database-backups/" ,0755 );
-            echo WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
+            echo \WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
         };
 
         // generate a hash based on the date and a random number
