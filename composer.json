@@ -3,7 +3,7 @@
   "description": "Backups",
   "keywords": ["wordpress", "plugin", "dev"],
   "homepage": "http://www.atomicsmash.co.uk/",
-  "license": "",
+  "license": "MIT",
   "authors": [
     {
         "name": "David Darke",

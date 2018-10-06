@@ -17,7 +17,6 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 
-
 /**
  * Backup your WordPress site
  *
@@ -207,6 +206,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	}
 
+	//full-site
+	//database
+	//media
 
 	public function backup( $args, $assoc_args ){
 
@@ -219,29 +221,21 @@ class Backups_Commands extends \WP_CLI_Command {
 		}
 
 
-		$this->backup_database( $args, $assoc_args );
+		// $this->backup_database( $args, $assoc_args );
 
-		//full-site
-		//database
-		//media
+		// if( ! isset( $assoc_args['direction'] ) ){
+		//     $direction = 'both';
+		// }else{
+		//     if( $assoc_args['direction'] == 'up' ){
+		//         $direction = 'up';
+		//     }else if( $assoc_args['direction'] == 'down' ){
+		//         $direction = 'down';
+		//     }else{
+		//         WP_CLI::error( "Please only provide 'up' or 'down' as a direction" );
+		//     }
+		// }
 
-	}
-
-	/**
-     * Two way transfer
-     *
-	 * ## OPTIONS
-     *
-     * <what_to_sync>
-     * : Name of bucket to create
-     *
-     * ## EXAMPLES
-     *
-     *     $ wp option wordpress.dev 40
-     *     Success: This is will setup a new bucket and add a lifecycle policy of
-     *     40 days for the SQL folder.
-	 */
-	public function sync( $args, $assoc_args){
+		$this->backup_media( $args, $assoc_args );
 
 
 	}
@@ -260,20 +254,7 @@ class Backups_Commands extends \WP_CLI_Command {
      *     Success: Will sync all uploads to S3
      *
      */
-	private function sync_media( $args, $assoc_args ) {
-
-        // Check to make sure direction is set and is valid
-        if( ! isset( $assoc_args['direction'] ) ){
-            $direction = 'both';
-        }else{
-            if( $assoc_args['direction'] == 'up' ){
-                $direction = 'up';
-            }else if( $assoc_args['direction'] == 'down' ){
-                $direction = 'down';
-            }else{
-                WP_CLI::error( "Please only provide 'up' or 'down' as a direction" );
-            }
-        }
+	private function backup_media( $args, $assoc_args ) {
 
 		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 		$wp_upload_dir = wp_upload_dir();
@@ -282,6 +263,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		// 	return WP_CLI::error( "Config details missing" );
 		// }
 
+		//ASTODO move this to to main backup command
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
             echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
@@ -291,9 +273,12 @@ class Backups_Commands extends \WP_CLI_Command {
             return false;
         }
 
-		WP_CLI::log( WP_CLI::colorize( "%YStarting to sync files%n" ));
+		\WP_CLI::line( \WP_CLI::colorize( "%YStarting to sync media files%n" ));
 
 		$missing_files = $this->find_files_to_sync();
+
+	    $direction = 'both';
+
 
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
@@ -339,7 +324,7 @@ class Backups_Commands extends \WP_CLI_Command {
     					}
     					$results['files'][] = $file['file'];
 
-                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file'] . "%n%y - ⬇ downloaded from S3%n" ));
+                        \WP_CLI::log( \WP_CLI::colorize( "%gSynced: ".$file['file'] . "%n%y - ⬇ downloaded from S3%n" ));
     				}
                 }
 
@@ -352,7 +337,7 @@ class Backups_Commands extends \WP_CLI_Command {
     					));
     					$results['files'][] = $file['file'];
 
-                        WP_CLI::log( WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
+                        \WP_CLI::line( \WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
     				}
                 }
 
@@ -362,7 +347,7 @@ class Backups_Commands extends \WP_CLI_Command {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
-		return WP_CLI::success( "Sync complete! 😎" );
+		return \WP_CLI::success( "Media library sync complete! ✅" );
 
 	}
 
@@ -402,10 +387,10 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		$wp_upload_dir = wp_upload_dir();
 
-		$iter = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator($wp_upload_dir['basedir'], RecursiveDirectoryIterator::SKIP_DOTS),
-			RecursiveIteratorIterator::SELF_FIRST,
-			RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
+		$iter = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($wp_upload_dir['basedir'], \RecursiveDirectoryIterator::SKIP_DOTS),
+			\RecursiveIteratorIterator::SELF_FIRST,
+			\RecursiveIteratorIterator::CATCH_GET_CHILD // Ignore "Permission denied"
 		);
 
 		// $paths = array($wp_upload_dir['basedir']);
@@ -468,7 +453,7 @@ class Backups_Commands extends \WP_CLI_Command {
      */
     private function backup_database( $args, $assoc_args){
 
-		\WP_CLI::line( "Started database backup..." );
+		\WP_CLI::line( \WP_CLI::colorize( "%YStarted database backup%n" ));
 
         $wp_upload_dir = wp_upload_dir();
 
