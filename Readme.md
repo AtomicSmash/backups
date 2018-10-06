@@ -1,14 +1,10 @@
-This is for backing up WordPress websites to Amazon S3.
+This plugin is for backing up a WordPress website to Amazon S3.
 
-### How 'Backups' talks to S3
+### Plugin features
 
-The setup will ask you to add these constants to your wp-config.php file:
-
-- BACKUPS_REGION
-- BACKUPS_ACCESS_KEY_ID
-- BACKUPS_SECRET_ACCESS_KEY
-
-You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
+- Database backup
+    - Save a local database dump with an obscure file name
+- Media library backup
 
 ## Installation
 
@@ -29,9 +25,9 @@ wp plugin activate backups
 And these constants to your wp-config file:
 
 ```
-define('BACKUPS_REGION','eu-west-2'); //London
-define('BACKUPS_ACCESS_KEY_ID','');
-define('BACKUPS_SECRET_ACCESS_KEY','');
+define('BACKUPS_S3_REGION','eu-west-2'); //London
+define('BACKUPS_S3_ACCESS_KEY_ID','');
+define('BACKUPS_S3_SECRET_ACCESS_KEY','');
 ```
 
 #### 4. Then finally run (you will need the constants above):
@@ -125,6 +121,8 @@ If you are using forge, then simply add to the server scheduling panel:
 ![forge-schedule](https://user-images.githubusercontent.com/1636310/40587898-73fcbca0-61cd-11e8-8317-f1d24645bee5.png)
 
 
+
+
 ## Functions
 
 **logflume sync [--direction=<up-or-down>]**
@@ -144,6 +142,17 @@ If you are using forge, then simply add to the server scheduling panel:
 
 **logflume autodelete_sql**
 > Setup a S3 lifecycle to auto-delete from the SQL folder after a number of days.
+
+
+### How 'Backups' talks to S3
+
+The setup will ask you to add these constants to your wp-config.php file:
+
+- BACKUPS_S3_REGION
+- BACKUPS_S3_ACCESS_KEY_ID
+- BACKUPS_S3_SECRET_ACCESS_KEY
+
+You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
 
 ## Troubleshooting
