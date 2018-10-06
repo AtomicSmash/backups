@@ -40,10 +40,10 @@ class Backups_Commands extends \WP_CLI_Command {
 
         $s3 = new S3Client([
             'version'     => 'latest',
-            'region'      => BACKUPS_REGION,
+            'region'      => BACKUPS_S3_REGION,
             'credentials' => [
-                'key'    => BACKUPS_ACCESS_KEY_ID,
-                'secret' => BACKUPS_SECRET_ACCESS_KEY,
+                'key'    => BACKUPS_S3_ACCESS_KEY_ID,
+                'secret' => BACKUPS_S3_SECRET_ACCESS_KEY,
             ],
         ]);
 
@@ -51,15 +51,15 @@ class Backups_Commands extends \WP_CLI_Command {
     }
 
 	private function check_config_details_exist(){
-        if ( !defined('BACKUPS_ACCESS_KEY_ID') || !defined('BACKUPS_SECRET_ACCESS_KEY') || !defined('BACKUPS_REGION') || BACKUPS_ACCESS_KEY_ID == "" || BACKUPS_SECRET_ACCESS_KEY == "" || BACKUPS_REGION == "" ) {
+        if ( !defined('BACKUPS_S3_ACCESS_KEY_ID') || !defined('BACKUPS_S3_SECRET_ACCESS_KEY') || !defined('BACKUPS_S3_REGION') || BACKUPS_S3_ACCESS_KEY_ID == "" || BACKUPS_S3_SECRET_ACCESS_KEY == "" || BACKUPS_S3_REGION == "" ) {
 
             echo WP_CLI::colorize( "%rS3 access details don't currently exist in your config files 😓!%n\n" );
 
             // Add config details
             echo WP_CLI::colorize( "%YAdd these new config details to your wp-config file:%n\n");
-            echo WP_CLI::colorize( "%Ydefine('BACKUPS_REGION','eu-west-2'); // eu-west-2 is London%n\n");
-            echo WP_CLI::colorize( "%Ydefine('BACKUPS_ACCESS_KEY_ID','');%n\n");
-            echo WP_CLI::colorize( "%Ydefine('BACKUPS_SECRET_ACCESS_KEY','');%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_S3_REGION','eu-west-2'); // eu-west-2 is London%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_S3_ACCESS_KEY_ID','');%n\n");
+            echo WP_CLI::colorize( "%Ydefine('BACKUPS_S3_SECRET_ACCESS_KEY','');%n\n");
             echo WP_CLI::colorize( "%YOnce these are in place, re-run %n");
             echo WP_CLI::colorize( "%r'wp backups create_bucket'%n\n\n");
 
@@ -215,7 +215,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		// echo "</pre>";
 
 		if( empty( $assoc_args ) ){
-			\WP_CLI::line( "You haven't prefined what to sync. So using default (media + db) 😎" );
+			\WP_CLI::line( "You haven't defined what to sync. So using backing up media and database 🤓" );
 		}
 
 
@@ -298,10 +298,10 @@ class Backups_Commands extends \WP_CLI_Command {
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => BACKUPS_REGION,
+			'region'      => BACKUPS_S3_REGION,
 			'credentials' => [
-				'key'    => BACKUPS_ACCESS_KEY_ID,
-				'secret' => BACKUPS_SECRET_ACCESS_KEY,
+				'key'    => BACKUPS_S3_ACCESS_KEY_ID,
+				'secret' => BACKUPS_S3_SECRET_ACCESS_KEY,
 			],
 		]);
 
@@ -377,10 +377,10 @@ class Backups_Commands extends \WP_CLI_Command {
         //ASTODO This isn't needed!
 		$s3 = new S3Client([
 			'version'     => 'latest',
-			'region'      => BACKUPS_REGION,
+			'region'      => BACKUPS_S3_REGION,
 			'credentials' => [
-				'key'    => BACKUPS_ACCESS_KEY_ID,
-				'secret' => BACKUPS_SECRET_ACCESS_KEY,
+				'key'    => BACKUPS_S3_ACCESS_KEY_ID,
+				'secret' => BACKUPS_S3_SECRET_ACCESS_KEY,
 			],
 		]);
 
@@ -468,14 +468,7 @@ class Backups_Commands extends \WP_CLI_Command {
      */
     private function backup_database( $args, $assoc_args){
 
-        // echo "<pre>";
-        // print_r($args);
-        // echo "</pre>";
-        // echo "<pre>";
-        // print_r($assoc_args);
-        // echo "</pre>";
-        // die();
-
+		\WP_CLI::line( "Started database backup..." );
 
         $wp_upload_dir = wp_upload_dir();
 
@@ -488,6 +481,8 @@ class Backups_Commands extends \WP_CLI_Command {
         // generate a hash based on the date and a random number
         $hashed_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
 
+		\WP_CLI::line( " > Backing up database to '/database-backups/" . $hashed_filename . "' 💾" );
+
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
         $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
@@ -496,6 +491,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
         //ASTODO centralise this get option, once it's centalised there will be a way of overriding it via config
         $selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+		\WP_CLI::line( " > Sending SQL file to S3 📡" );
 
         //ASTODO check to see if backup actually worked
         if( $selected_s3_bucket != "" ){
@@ -514,7 +511,7 @@ class Backups_Commands extends \WP_CLI_Command {
                 $success = true;
 
             } catch (Aws\S3\Exception\S3Exception $e) {
-    			echo "There was an error uploading the backup database 😕";
+    			echo " > There was an error uploading the backup database 😕";
     		}
 
             // If successfully transfered, delete local copy
@@ -522,8 +519,12 @@ class Backups_Commands extends \WP_CLI_Command {
         }
 
         $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename );
-        if( $success == true ){
-            return \WP_CLI::success( "DB backup complete! 🎉" );
+
+		\WP_CLI::line( " > Deleting local copy of DB 🗑" );
+
+
+	    if( $success == true ){
+            return \WP_CLI::success( "DB backup complete! ✅" );
         }else{
             return \WP_CLI::error( "There was an issue backing up the database" );
         }
