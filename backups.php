@@ -498,7 +498,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
-                    'Key'    => "sql-backups/".date('d-m-Y--h:i:s').".sql",
+                    'Key'    => "database-backups/".date('d-m-Y--h:i:s').".sql",
                     'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename
                 ));
 
@@ -540,14 +540,14 @@ class Backups_Commands extends \WP_CLI_Command {
      *     Success: Will sync all uploads to S3
      *
      */
-    private function add_lifecycle( $args, $assoc_args ){
+    public function setup_autodelete_sql( $args, $assoc_args ){
 
         $selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
         if( $selected_s3_bucket == "" ){
-            echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
-            echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
-            echo WP_CLI::colorize( "%Y%n\n");
+            \WP_CLI::log( \WP_CLI::colorize( "%YNo bucket is currently selected. Run %n") );
+            \WP_CLI::log( \WP_CLI::colorize( "%r'wp backups create_bucket'%n") );
+            \WP_CLI::log( \WP_CLI::colorize( "%Y%n\n") );
             return false;
         }
 
@@ -562,20 +562,18 @@ class Backups_Commands extends \WP_CLI_Command {
             'LifecycleConfiguration' => [
                 'Rules' => [[
                     'Expiration' => [
-                        // 'Date' => <integer || string || DateTime>,
                         'Days' => $backup_life,
-                        // 'ExpiredObjectDeleteMarker' => true || false,
                     ],
                     'ID' => "SQL backups",
                     'Filter' => [
-                        'Prefix' => 'sql-backups'
+                        'Prefix' => 'database-backups'
                     ],
                     'Status' => 'Enabled'
                 ]]
             ]
         ]);
 
-        echo WP_CLI::success( "Autodelete lifecycle added");
+    	\WP_CLI::success( "Autodelete lifecycle added to '/database-backups/' 🤓");
 
     }
 

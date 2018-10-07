@@ -1,24 +1,16 @@
 This plugin is for backing up a WordPress website to Amazon S3.
 
-### Plugin functionality
+### Plugin features
 
-| Database backups                                      |
-|-------------------------------------------------------|
-| Saves a local database dump with an obscure file name |
-| Syncs local database with S3                          |
-| Removes local copy if transfer is successful          |
-
-| Media library backup                                  |
-|-------------------------------------------------------|
-| Two way sync of uploads folder and Amazon S3          |
-| Great for syncing local development assets |
-
-| Offload S3 integration                                 |
-|-------------------------------------------------------|
-| After media has been moving transferred, you can save the local meta data required for offload S3 to starting loading assets from S3. |
-
-
-
+- Database backup.
+    - Saves a local database dump with an obscure file name.
+    - Syncs local database with S3.
+    - Removes local copy to reduce wasted HDD space.
+- Media library backup.
+	- Two way sync of uploads folder and Amazon S3.
+	- This can be used for backing up live websites but also for syncing local development assets between developers.
+- Offload S3 integration.
+	- After media has been moving transferred, you can save the local meta data required for offload S3 to starting loading assets from S3.
 
 
 ## Installation
@@ -29,13 +21,9 @@ This plugin is for backing up a WordPress website to Amazon S3.
 composer require atomicsmash/backups
 ```
 
-#### 2. Activate the plugin via the admin interface, or just run:
+Commit the changes to your local composer file.
 
-```
-wp plugin activate backups
-```
-
-#### 3. Add your credentials to your wp-config file.
+#### 2. Add your S3 credentials to your wp-config file.
 
 And these constants to your wp-config file:
 
@@ -45,79 +33,66 @@ define('BACKUPS_S3_ACCESS_KEY_ID','');
 define('BACKUPS_S3_SECRET_ACCESS_KEY','');
 ```
 
-#### 4. Then finally run (you will need the constants above):
+Commit the changes to your config.
+
+#### 3. Activate 'Backups'
+
+Now activate the plugin on whichever site you would like backup. This can be done via the admin interface, or by running:
+
+```
+wp plugin activate backups
+```
+
+If you want to backup a live website, chances are you will need to SSH into the server.
+
+#### 4. Test S3 connection:
+
+To test the connection to S3 run:
 
 ```
 wp backups check_credentials
 ```
 
-#### 5. If the check is successful, you can start the 'backups' setup:
+If there is an issue, please check your credentials are being loaded and are correct.
+
+#### 5. If the check is successful, it's time to create a fresh bucket
 
 ```
 wp backups create_bucket <bucket_name>
 ```
 
-`bucket_name` is usually the address of the site you are currently working on ('website.local')
+`bucket_name` is usually the address of the site you are currently working on ('website.local'). For example:
 
-You will also be asked `Create bucket? [y/n]` - supply 'y' if this is a fresh setup. Select N to not do that.
+```
+wp logflume create_bucket mywebsite.co.uk
+```
 
-#### 6. Time to sync!
+Running the above command will ask the question: `Create bucket? [y/n]` - supply 'y' to continue.
+
+This will then create a bucket called "mywebsite.co.uk.backup" and select it ready for use.
+
+
+#### 6. Start the first backup
 
 ```
 wp backups backup
 ```
 
-Bucket name is usually the address of the site you are currently using
+#### 7. Setup auto-deletion of SQL files
 
-## Backup a live website
-
-Log-flume can be used to backup a live site as well as sync development assets.
-
-#### 1. Install and setup log-flume
-
-Get log-flume running on local version of the site (using the 'Installation' guide above).
-
-#### 2. Log into the live env
-
-SSH into the live environment and navigate to your WordPress installation.
-
-#### 3. Check local credential work in live env
+Depending on how often you backup your website, the SQL files will start to build up quickly. You can setup an S3 folder lifecycle to auto-delete files older than X number of days.
 
 ```
-wp logflume check_credentials
+wp backups setup_autodelete_sql <number_of_days>
 ```
 
-Run to find any issues.
-
-#### 4. Setup a bucket for the live env
-
-It's always good to separate the dev and live environments.
+We usually usually retain backups for 30 days, so we would run:
 
 ```
-wp logflume create_bucket <bucket_name>
+wp backups setup_autodelete_sql 30
 ```
 
-Create a fresh bucket with the live URL as the bucket name. For example:
-
-```
-wp logflume create_bucket atomicsmash.co.uk
-```
-
-#### 5. Setup auto-deletion of SQL files
-
-Depending on how often you run this command, the SQL files will start to build up quickly. You can setup an S3 folder lifecycle to auto-delete files older than X number of days.
-
-```
-wp logflume autodelete_sql <number_of_days>
-```
-
-We usually usually retain backups for 30 days:
-
-```
-wp logflume autodelete_sql 30
-```
-
-#### 6. Setting up auto-backup (cron job)
+#### 8. Setting up auto-backup (cron job)
 
 To get the backup command to run on a regular basis, you need to setup a cron job. Use something similar to this:
 
@@ -179,3 +154,21 @@ Make sure you are requiring your autoload.php generated by composer. We usually 
 ```
 require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 ```
+
+# Upcoming featured
+
+- Backup stats
+
+# Changelog
+
+= 0.0.3 =
+* Added offload S3 functionality
+* Added setup guide
+* Added lifecycle addition for SQL folder
+
+= 0.0.2 =
+* Simplified media transferring
+
+= 0.0.1 =
+* Project renamed to from log-flume to 'Backups'
+* Added database backup functionality
