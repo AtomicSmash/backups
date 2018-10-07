@@ -1,0 +1,17 @@
+# command: cap -T (lists all available capistrano commands)
+
+namespace :backups do
+
+  # command: cap staging push:db
+  desc 'Upload local database to server'
+  task :backup do
+
+    puts "Starting backup"
+
+    on roles(:web) do
+
+      execute "wp backups backup --path=#{release_path}/wp"
+
+    end
+  end
+end

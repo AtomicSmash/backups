@@ -18,7 +18,7 @@ This plugin is for backing up a WordPress website to Amazon S3.
 #### 1. Add the Wordpress plugin to your composer file by navigating to your project and running this inside a terminal:
 
 ```
-composer require atomicsmash/backups
+composer require atomicsmash/backups "*"
 ```
 
 Commit the changes to your local composer file.
@@ -64,7 +64,7 @@ wp backups create_bucket <bucket_name>
 `bucket_name` is usually the address of the site you are currently working on ('website.local'). For example:
 
 ```
-wp logflume create_bucket mywebsite.co.uk
+wp backups create_bucket mywebsite.co.uk
 ```
 
 Running the above command will ask the question: `Create bucket? [y/n]` - supply 'y' to continue.
@@ -72,7 +72,9 @@ Running the above command will ask the question: `Create bucket? [y/n]` - supply
 This will then create a bucket called "mywebsite.co.uk.backup" and select it ready for use.
 
 
-#### 6. Start the first backup
+#### 6. Perform a backup
+
+To start the first backup manually,
 
 ```
 wp backups backup
@@ -97,41 +99,30 @@ wp backups setup_autodelete_sql 30
 To get the backup command to run on a regular basis, you need to setup a cron job. Use something similar to this:
 
 ```
-/usr/local/bin/wp logflume backup_wordpress --path=/path/to/www.website.co.uk/
+/usr/local/bin/wp backups backup --path=/path/to/www.website.co.uk/
 ```
 
-If you are using composer in your project then your WordPress core files might be inside a subfolder, please modify the path to reflect this. If WordPress lives inside "/wp/" then the cron job would look like this:
+If you are using composer in your project then your WordPress core files might be inside a subfolder, please modify the path to reflect this. The cron job would look like this:
 
 ```
-/usr/local/bin/wp logflume backup_wordpress --path=/path/to/www.website.co.uk/wp
+/usr/local/bin/wp backups backup --path=/path/to/www.website.co.uk/wp
 ```
 
 If you are using forge, then simply add to the server scheduling panel:
 
-![forge-schedule](https://user-images.githubusercontent.com/1636310/40587898-73fcbca0-61cd-11e8-8317-f1d24645bee5.png)
+![forge-schedule](https://user-images.githubusercontent.com/1636310/46582964-1cd4d880-ca47-11e8-90f1-c80e0ba625d6.png)
 
+Also, if you are using Capistrano, don't forget to add `current` to the
 
-
+```
+/usr/local/bin/wp backups backup --path=/path/to/www.website.co.uk/current/wp
+```
 
 ## Functions
 
-**logflume sync [--direction=<up-or-down>]**
+**wp backups backup [--direction=<up-or-down>]**
 > This function runs `sync` **and** a DB backup.
 
-**logflume backup_wordpress**
-> This function runs `sync` **and** a DB backup.
-
-**logflume create_bucket <bucket_name>**
-> Created the required bucket and bucket settings for handling media on S3. It's good to use the current hostname.
-
-**logflume select_bucket <bucket_name>**
-> Use this to change the bucket that log-flume is currently sync to.
-
-**logflume check_credentials**
-> Performs a simple S3 function to make sure it can access the selected bucket
-
-**logflume autodelete_sql**
-> Setup a S3 lifecycle to auto-delete from the SQL folder after a number of days.
 
 
 ### How 'Backups' talks to S3
@@ -158,8 +149,15 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 # Upcoming featured
 
 - Backup stats
+- Added 'restore' functionality
+- Add countdown to upload and download lines
 
 # Changelog
+
+= 0.0.4 =
+* Improved UX when creating a bucket
+* FIXED issue with syncing DB backups back to local machine from S3
+* Added .cap task
 
 = 0.0.3 =
 * Added offload S3 functionality

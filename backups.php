@@ -3,7 +3,7 @@
 Plugin Name: Backups
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Backup your site to Amazon S3
-Version: 0.0.1
+Version: 0.0.4
 Author: Atomic Smash
 Author URI: https://www.atomicsmash.co.uk
 */
@@ -89,7 +89,7 @@ class Backups_Commands extends \WP_CLI_Command {
         // Get bucket name
         $bucket_name = $args[0];
 
-        \WP_CLI::confirm( 'Create bucket?', $assoc_args = array( 'continue' => 'yes' ) );
+        \WP_CLI::confirm( 'Create bucket ' . $bucket_name . '.backup ?', $assoc_args = array( 'continue' => 'yes' ) );
 
         // If 'Y' create backup bucket
         if( isset( $assoc_args['continue'] )){
@@ -232,7 +232,7 @@ class Backups_Commands extends \WP_CLI_Command {
 	public function backup( $args, $assoc_args ){
 
 		if( empty( $assoc_args ) ){
-			\WP_CLI::log( "You haven't defined what to sync. So using backing up media and database 🤓" );
+			\WP_CLI::log( "You haven't defined what to sync. So using backing up media and database!" );
 			$assoc_args['type'] = "all";
 		}
 
@@ -386,7 +386,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( count( $iterator ) > 0 ){
 			foreach ($iterator as $object) {
 
-				if ( strpos( $object['Key'], 'sql-backup' ) === false ) {
+				if ( strpos( $object['Key'], 'database-backups' ) === false ) {
 					$found_files_remotely[] = $object['Key'];
 				}
 
