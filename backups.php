@@ -100,7 +100,7 @@ class Backups_Commands extends \WP_CLI_Command {
             // Create standard backup bucket
             try {
                 $result = $s3->createBucket([
-                    'Bucket' => $bucket_name . ".backups"
+                    'Bucket' => $bucket_name . ".backup"
                 ]);
             } catch (\Aws\S3\Exception\S3Exception $e) {
                 echo \WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
