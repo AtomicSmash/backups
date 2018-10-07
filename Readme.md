@@ -168,5 +168,5 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 * Simplified media transferring
 
 = 0.0.1 =
-* Project renamed to from log-flume to 'Backups'
+* Project renamed from log-flume to 'Backups'
 * Added database backup functionality

@@ -3,7 +3,7 @@
 Plugin Name: Backups
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Backup your site to Amazon S3
-Version: 0.0.4
+Version: 0.0.5
 Author: Atomic Smash
 Author URI: https://www.atomicsmash.co.uk
 */
