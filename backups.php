@@ -232,7 +232,7 @@ class Backups_Commands extends \WP_CLI_Command {
 	public function backup( $args, $assoc_args ){
 
 		if( empty( $assoc_args ) ){
-			\WP_CLI::line( "You haven't defined what to sync. So using backing up media and database 🤓" );
+			\WP_CLI::log( "You haven't defined what to sync. So using backing up media and database 🤓" );
 			$assoc_args['type'] = "all";
 		}
 
@@ -279,7 +279,7 @@ class Backups_Commands extends \WP_CLI_Command {
             return false;
         }
 
-		\WP_CLI::line( \WP_CLI::colorize( "%YStarting to sync media files%n" ));
+		\WP_CLI::log( \WP_CLI::colorize( "%YStarting to sync media files%n" ));
 
 		$missing_files = $this->find_files_to_sync();
 
@@ -343,7 +343,7 @@ class Backups_Commands extends \WP_CLI_Command {
     					));
     					$results['files'][] = $file['file'];
 
-                        \WP_CLI::line( \WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
+                        \WP_CLI::log( \WP_CLI::colorize( "%gSynced: ".$file['file']."%n%y - ⬆ uploaded to S3%n" ));
     				}
                 }
 
@@ -462,7 +462,7 @@ class Backups_Commands extends \WP_CLI_Command {
      */
     private function backup_database( $args, $assoc_args){
 
-		\WP_CLI::line( \WP_CLI::colorize( "%YStarted database backup%n" ));
+		\WP_CLI::log( \WP_CLI::colorize( "%YStarted database backup%n" ));
 
         $wp_upload_dir = wp_upload_dir();
 
@@ -475,7 +475,7 @@ class Backups_Commands extends \WP_CLI_Command {
         // generate a hash based on the date and a random number
         $hashed_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
 
-		\WP_CLI::line( " > Backing up database to '/database-backups/" . $hashed_filename . "' 💾" );
+		\WP_CLI::log( " > Backing up database to '/database-backups/" . $hashed_filename . "' 💾" );
 
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
@@ -486,7 +486,7 @@ class Backups_Commands extends \WP_CLI_Command {
         //ASTODO centralise this get option, once it's centalised there will be a way of overriding it via config
         $selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
-		\WP_CLI::line( " > Sending SQL file to S3 📡" );
+		\WP_CLI::log( " > Sending SQL file to S3 📡" );
 
         //ASTODO check to see if backup actually worked
         if( $selected_s3_bucket != "" ){
@@ -514,7 +514,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
         $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename );
 
-		\WP_CLI::line( " > Deleting local copy of DB 🗑" );
+		\WP_CLI::log( " > Deleting local copy of DB 🗑" );
 
 
 	    if( $success == true ){
