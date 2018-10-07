@@ -1,10 +1,25 @@
 This plugin is for backing up a WordPress website to Amazon S3.
 
-### Plugin features
+### Plugin functionality
 
-- Database backup
-    - Save a local database dump with an obscure file name
-- Media library backup
+| Database backups                                      |
+|-------------------------------------------------------|
+| Saves a local database dump with an obscure file name |
+| Syncs local database with S3                          |
+| Removes local copy if transfer is successful          |
+
+| Media library backup                                  |
+|-------------------------------------------------------|
+| Two way sync of uploads folder and Amazon S3          |
+| Great for syncing local development assets |
+
+| Offload S3 integration                                 |
+|-------------------------------------------------------|
+| After media has been moving transferred, you can save the local meta data required for offload S3 to starting loading assets from S3. |
+
+
+
+
 
 ## Installation
 
