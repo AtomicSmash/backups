@@ -111,7 +111,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
         if( $creation_success == true ){
 
-            update_option( 'backups_s3_selected_bucket', $bucket_name . '.backups', 0 );
+            update_option( 'backups_s3_selected_bucket', $bucket_name . '.backup', 0 );
             \WP_CLI::success( "Backups bucket created and selected 👌");
 
         }
