@@ -561,48 +561,58 @@ class Backups_Commands extends \WP_CLI_Command {
 	/**
 	 * Sync local development SQL
 	 *
+	 * ## OPTIONS
+	 *
+	 * [--direction=<type>]
+	 * : Direction to push or pull the development DB
+	 *
 	 */
-	public function backup_development_sql( $args, $assoc_args ){
+	public function development_sql( $args, $assoc_args ){
 
 		$s3 = $this->connect_to_s3();
 		//ASTODO This get_option could be a helper
 		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
-		\WP_CLI::log( "Checking S3 to see if there is a newer development DB available 📡" );
+		if( !isset( $assoc_args['direction'] ) ){
 
+			\WP_CLI::log( "Checking S3 to see if there is a newer development DB available 📡" );
 
-		// if($ext != ""){
-			$result = $s3->getObject([
-			   'Bucket' => $selected_s3_bucket,
-			   'Key'    => 'data/development.sql',
-			   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
-			]);
-		// }/
+			// if($ext != ""){
+				$result = $s3->getObject([
+				   'Bucket' => $selected_s3_bucket,
+				   'Key'    => 'data/development.sql',
+				   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
+				]);
+			// }/
 
-		// echo "<pre>";
-		// print_r( get_class_methods( $result ) );
-		// echo "</pre>";
-		//
-
-		// echo "<pre>";
-		// print_r($result);
-		// echo "</pre>";
+			// echo "<pre>";
+			// print_r( get_class_methods( $result ) );
+			// echo "</pre>";
+			//
 
 
 
-		$file_on_s3 = $result->toArray();
+			// echo "<pre>";
+			// print_r($result);
+			// echo "</pre>";
 
-		echo "<pre>";
-		print_r( $file_on_s3['LastModified'] );
-		echo "</pre>";
+			$file_on_s3 = $result->toArray();
 
-		\WP_CLI::confirm( "There is a newer development DB available, would you like to download it?", $assoc_args );
+			echo "<pre>";
+			print_r( $file_on_s3['LastModified'] );
+			echo "</pre>";
+
+			\WP_CLI::confirm( " ✅ There is a newer development DB available, would you like to download it?", $assoc_args );
+
+			// date comparison
+			// fork logic on whether to sync or dump
+			// add dump and sync logic
 
 
-		// echo "<pre>";
-		// print_r($assoc_args);
-		// echo "</pre>";
-
+			// echo "<pre>";
+			// print_r($assoc_args);
+			// echo "</pre>";
+		}
 
 
 
