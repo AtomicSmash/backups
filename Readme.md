@@ -1,17 +1,32 @@
 This plugin is for backing up a WordPress website to Amazon S3.
 
-### Plugin features
+## Plugin features
 
-- Database backup.
+- Database backup
     - Saves a local database dump with an obscure file name.
     - Syncs local database with S3.
     - Removes local copy to reduce wasted HDD space.
-- Media library backup.
+- Media library backup
 	- Two way sync of uploads folder and Amazon S3.
 	- This can be used for backing up live websites but also for syncing local development assets between developers.
-- Offload S3 integration.
+- Offload S3 integration - *Coming soon*
 	- After media has been moving transferred, you can save the local meta data required for offload S3 to starting loading assets from S3.
 
+## Functions
+
+### wp backups backup
+> This function syncs media, performs a DB backup and sync the database to S3.
+
+Examples
+
+	wp backups backup
+    - backup media and database
+
+	wp backups backup --type=media
+	- This just syncs your media
+
+	wp backups backup --type=database
+	- Use this to dump the DB and sync with S3
 
 ## Installation
 
@@ -32,6 +47,8 @@ define('BACKUPS_S3_REGION','eu-west-2'); //London
 define('BACKUPS_S3_ACCESS_KEY_ID','');
 define('BACKUPS_S3_SECRET_ACCESS_KEY','');
 ```
+
+You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
 
 Commit the changes to your config.
 
@@ -118,24 +135,6 @@ Also, if you are using Capistrano, don't forget to add `current` to the
 /usr/local/bin/wp backups backup --path=/path/to/www.website.co.uk/current/wp
 ```
 
-## Functions
-
-**wp backups backup [--direction=<up-or-down>]**
-> This function runs `sync` **and** a DB backup.
-
-
-
-### How 'Backups' talks to S3
-
-The setup will ask you to add these constants to your wp-config.php file:
-
-- BACKUPS_S3_REGION
-- BACKUPS_S3_ACCESS_KEY_ID
-- BACKUPS_S3_SECRET_ACCESS_KEY
-
-You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
-
-
 ## Troubleshooting
 
 Are you receiving an error similar to `PHP Fatal error:  Uncaught Error: Class 'Aws\S3\S3Client' not found in /path/to/file`
@@ -153,6 +152,9 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 - Add countdown to upload and download lines
 
 # Changelog
+
+= 0.0.5 =
+* Updated readme
 
 = 0.0.4 =
 * Improved UX when creating a bucket

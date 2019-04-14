@@ -20,20 +20,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 /**
  * Backup your WordPress site
  *
- * <message>
- * : An awesome message to display
- *
- * --append=<message>
- * : An awesome message to append to the original message.
- *
  * @when before_wp_load
  */
 class Backups_Commands extends \WP_CLI_Command {
-
-    // public function __construct() {
-    //     if( $this->check_config_details_exist() == true ){
-    //     }
-	// }
 
 	private function connect_to_s3(){
 
@@ -78,11 +67,6 @@ class Backups_Commands extends \WP_CLI_Command {
      * <bucket_name>
      * : Name of bucket to create
      *
-     * ## EXAMPLES
-     *
-     *     $ wp option wordpress.dev 40
-     *     Success: This is will setup a new bucket and add a lifecycle policy of
-     *     40 days for the SQL folder.
      */
     public function create_bucket( $args, $assoc_args ){
 
