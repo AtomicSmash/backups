@@ -17,6 +17,8 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 
+require 'vendor/autoload.php';
+
 /**
  * Backup your WordPress site
  *
@@ -198,13 +200,13 @@ class Backups_Commands extends \WP_CLI_Command {
      * [--type=<type>]
      * : What would you likw to sync? All,database or media.
      *
+     * [--dev=<true>]
+     * : What would you likw to sync? All,database or media.
+     *
      * ## EXAMPLES
      *
 	 *     $ wp backups backup
      *     Success: Will sync media and database to S3
-     *
-	 *     $ wp backups backup --type=all
-	 *     Success: Will sync media and database to S3
      *
      *     $ wp backups backup --type=database
 	 *     Success: Will sync the database to S3
@@ -215,8 +217,7 @@ class Backups_Commands extends \WP_CLI_Command {
      */
 	public function backup( $args, $assoc_args ){
 
-		if( empty( $assoc_args ) ){
-			\WP_CLI::log( "You haven't defined what to sync. So using backing up media and database!" );
+		if( ! isset( $assoc_args['type'] ) ){
 			$assoc_args['type'] = "all";
 		}
 
@@ -232,17 +233,6 @@ class Backups_Commands extends \WP_CLI_Command {
 
     /**
      * Sync files to S3. You can also just sync in one direction, this is good for backups
-     *
-     * ## OPTIONS
-     *
-     * [--direction=<up-or-down>]
-     * : Sync up to S3, or pull down from S3
-     *
-     * ## EXAMPLES
-     *
-     *     $ wp sync
-     *     Success: Will sync all uploads to S3
-     *
      */
 	private function backup_media( $args, $assoc_args ) {
 
@@ -370,7 +360,10 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( count( $iterator ) > 0 ){
 			foreach ($iterator as $object) {
 
-				if ( strpos( $object['Key'], 'database-backups' ) === false ) {
+
+				if ( strpos( $object['Key'], 'database-backups' ) === false || $object['Key'] == 'database-backups/development.sql' ) {
+					// echo $object['Key'] . "\n";
+
 					$found_files_remotely[] = $object['Key'];
 				}
 
@@ -456,14 +449,19 @@ class Backups_Commands extends \WP_CLI_Command {
             echo \WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
         };
 
-        // generate a hash based on the date and a random number
-        $hashed_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+		if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
+			// generate a hash based on the date and a random number
+	        $database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+		}else{
+			$database_filename = 'development.sql';
+		}
 
-		\WP_CLI::log( " > Backing up database to '/database-backups/" . $hashed_filename . "' 💾" );
+
+		\WP_CLI::log( " > Backing up database to '/database-backups/" . $database_filename . "' 💾" );
 
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
-        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
+        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename . " --allow-root --path=".ABSPATH);
 
         $s3 = $this->connect_to_s3();
 
@@ -483,7 +481,7 @@ class Backups_Commands extends \WP_CLI_Command {
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
                     'Key'    => "database-backups/".date('d-m-Y--h:i:s').".sql",
-                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename
+                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename
                 ));
 
                 $success = true;
@@ -495,11 +493,10 @@ class Backups_Commands extends \WP_CLI_Command {
             // If successfully transfered, delete local copy
 
         }
-
-        $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename );
-
-		\WP_CLI::log( " > Deleting local copy of DB 🗑" );
-
+		if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
+	        $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename );
+			\WP_CLI::log( " > Deleting local copy of DB 🗑" );
+		}
 
 	    if( $success == true ){
             return \WP_CLI::success( "DB backup complete! ✅" );
