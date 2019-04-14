@@ -200,9 +200,6 @@ class Backups_Commands extends \WP_CLI_Command {
      * [--type=<type>]
      * : What would you likw to sync? All,database or media.
      *
-     * [--dev=<true>]
-     * : What would you likw to sync? All,database or media.
-     *
      * ## EXAMPLES
      *
 	 *     $ wp backups backup
@@ -360,8 +357,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( count( $iterator ) > 0 ){
 			foreach ($iterator as $object) {
 
-
-				if ( strpos( $object['Key'], 'database-backups' ) === false || $object['Key'] == 'database-backups/development.sql' ) {
+				if ( strpos( $object['Key'], 'database-backups' ) === false ) {
 					// echo $object['Key'] . "\n";
 
 					$found_files_remotely[] = $object['Key'];
@@ -449,12 +445,14 @@ class Backups_Commands extends \WP_CLI_Command {
             echo \WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
         };
 
-		if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
-			// generate a hash based on the date and a random number
-	        $database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
-		}else{
-			$database_filename = 'development.sql';
-		}
+		// if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
+		// 	// generate a hash based on the date and a random number
+	    //     $database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+		// }else{
+		// 	$database_filename = 'development.sql';
+		// }
+
+		$database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
 
 
 		\WP_CLI::log( " > Backing up database to '/database-backups/" . $database_filename . "' 💾" );
@@ -557,6 +555,60 @@ class Backups_Commands extends \WP_CLI_Command {
     	\WP_CLI::success( "Autodelete lifecycle added to '/database-backups/' 🤓");
 
     }
+
+
+
+	/**
+	 * Sync local development SQL
+	 *
+	 */
+	public function backup_development_sql( $args, $assoc_args ){
+
+		$s3 = $this->connect_to_s3();
+		//ASTODO This get_option could be a helper
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+		\WP_CLI::log( "Checking S3 to see if there is a newer development DB available 📡" );
+
+
+		// if($ext != ""){
+			$result = $s3->getObject([
+			   'Bucket' => $selected_s3_bucket,
+			   'Key'    => 'data/development.sql',
+			   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
+			]);
+		// }/
+
+		// echo "<pre>";
+		// print_r( get_class_methods( $result ) );
+		// echo "</pre>";
+		//
+
+		// echo "<pre>";
+		// print_r($result);
+		// echo "</pre>";
+
+
+
+		$file_on_s3 = $result->toArray();
+
+		echo "<pre>";
+		print_r( $file_on_s3['LastModified'] );
+		echo "</pre>";
+
+		\WP_CLI::confirm( "There is a newer development DB available, would you like to download it?", $assoc_args );
+
+
+		// echo "<pre>";
+		// print_r($assoc_args);
+		// echo "</pre>";
+
+
+
+
+
+	}
+
 
 }
 
