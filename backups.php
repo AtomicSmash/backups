@@ -588,57 +588,27 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( !isset( $assoc_args['direction'] ) ){
 
-			\WP_CLI::log( "Checking S3 to see if there is a newer development DB available 📡" );
+			\WP_CLI::log( "Checking S3 for status of thedevelopment DB 📡" );
 
-			// if($ext != ""){
-				$result = $s3->getObject([
-				   'Bucket' => $selected_s3_bucket,
-				   'Key'    => $filename,
-				   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
-				]);
-			// }/
-
+			$result = $s3->getObject([
+			   'Bucket' => $selected_s3_bucket,
+			   'Key'    => $filename,
+			   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
+			]);
 
 			$file_on_s3 = $result->toArray();
-
 
 			$remote_file_datetime = $file_on_s3['LastModified'];
 
 			$local_file_date_object = new \DateTime( );
-			$local_file_date_object->setTimestamp( filemtime( $filename) );
+
+			$time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $local_file_date_object->getTimestamp() );
+
+			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
 
 
-			if( $remote_file_datetime > $local_file_date_object ){
-				echo "Remote file is newer than local file";
-			}
-
-			if( $remote_file_datetime < $local_file_date_object ){
-				echo "Remote file is older than local file";
-			}
-
-
-			// echo $interval->format('%s%a'); // +2 days
-
-
-			if ( file_exists($filename) ) {
-			    // echo "$filename was last modified: " . date ("F d Y H:i:s.", filemtime( $filename) );
-			}
-
-
-			// \WP_CLI::confirm( " ✅ There is a newer development DB available, would you like to download it?", $assoc_args );
-
-			// date comparison
-			// fork logic on whether to sync or dump
-			// add dump and sync logic
-
-
-			// echo "<pre>";
-			// print_r($assoc_args);
-			// echo "</pre>";
+		
 		}
-
-
-
 
 	}
 
