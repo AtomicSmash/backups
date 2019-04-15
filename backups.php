@@ -11,7 +11,7 @@ Author URI: https://www.atomicsmash.co.uk
 namespace BACKUPS;
 
 use Aws\S3\S3Client;
-use Aws\S3\Exception\S3Exception;
+use Aws\S3\Exception\S3Exception as S3;
 
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
@@ -38,6 +38,17 @@ class Backups_Commands extends \WP_CLI_Command {
         ]);
 
         return $s3;
+    }
+
+	private function get_selected_s3_bucket(){
+
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+		if( $selected_s3_bucket == "" ){
+			\WP_CLI::error('No bucket selected, please run through setup process');
+		}
+
+        return $selected_s3_bucket;
     }
 
 	private function check_config_details_exist(){
@@ -88,7 +99,7 @@ class Backups_Commands extends \WP_CLI_Command {
                 $result = $s3->createBucket([
                     'Bucket' => $bucket_name . ".backup"
                 ]);
-            } catch (\Aws\S3\Exception\S3Exception $e) {
+			} catch ( S3 $e ) {
                 echo \WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
                 $creation_success = false;
             }
@@ -117,7 +128,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
     	try {
             $result = $s3->listBuckets(array());
-        } catch(Aws\S3\Exception\S3Exception $e) {
+		} catch ( S3 $e ) {
             echo \WP_CLI::warning( "There was an error connecting to S3 😣\n\nThis was the error:\n" );
             echo $e->getAwsErrorCode()."\n";
             return false;
@@ -144,6 +155,7 @@ class Backups_Commands extends \WP_CLI_Command {
 			$selected_s3_bucket = $args[0];
 			update_option( 'backups_s3_selected_bucket', $selected_s3_bucket, 0 );
 			\WP_CLI::success( "Selected bucket updated" );
+			return 1;
 		}
 
 		// Test if bucket has not yet been selected
@@ -159,14 +171,13 @@ class Backups_Commands extends \WP_CLI_Command {
         //ASTODO this should be the built in config_check function
 		try {
 			$result = $s3->listBuckets( array() );
-		}
-
-		//catch S3 exception
-		catch( Aws\S3\Exception\S3Exception $e ) {
+		}catch( S3 $e ) {
 			$connected_to_S3 = false;
-			// echo 'Message: ' .$e->getMessage();
 		};
         //ASTODO END replace
+
+
+
 
 		if( $connected_to_S3 == true ){
 
@@ -320,7 +331,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			}
 
-		} catch (Aws\S3\Exception\S3Exception $e) {
+		} catch ( S3 $e ) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
@@ -484,7 +495,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
                 $success = true;
 
-            } catch (Aws\S3\Exception\S3Exception $e) {
+			} catch ( S3 $e ) {
     			echo " > There was an error uploading the backup database 😕";
     		}
 
@@ -567,11 +578,11 @@ class Backups_Commands extends \WP_CLI_Command {
 	 * : Direction to push or pull the development DB
 	 *
 	 */
-	public function development_sql( $args, $assoc_args ){
+	public function development_sql_sync( $args, $assoc_args ){
 
 		$s3 = $this->connect_to_s3();
-		//ASTODO This get_option could be a helper
-		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+		$selected_s3_bucket = $this->get_selected_s3_bucket();
 
 		if( !isset( $assoc_args['direction'] ) ){
 
