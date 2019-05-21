@@ -10,6 +10,9 @@ Author URI: https://www.atomicsmash.co.uk
 
 namespace BACKUPS;
 
+require 'vendor/autoload.php';
+
+
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception as S3;
 
@@ -17,7 +20,6 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 
-require 'vendor/autoload.php';
 
 /**
  * Backup your WordPress site
@@ -28,7 +30,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	private function connect_to_s3(){
 
-        $s3 = new S3Client([
+		$s3 = new S3Client([
             'version'     => 'latest',
             'region'      => BACKUPS_S3_REGION,
             'credentials' => [
@@ -574,7 +576,7 @@ class Backups_Commands extends \WP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * [--direction=<type>]
+	 * [--sync=<type>]
 	 * : Direction to push or pull the development DB
 	 *
 	 */
@@ -582,32 +584,78 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		$s3 = $this->connect_to_s3();
 
-		$filename = 'data/development.sql';
+		$database_filename = 'data/development.sql';
 
 		$selected_s3_bucket = $this->get_selected_s3_bucket();
 
-		if( !isset( $assoc_args['direction'] ) ){
+		\WP_CLI::log( "Checking S3 for status of thedevelopment DB 📡" );
 
-			\WP_CLI::log( "Checking S3 for status of thedevelopment DB 📡" );
+		$result = $s3->getObject([
+		   'Bucket' => $selected_s3_bucket,
+		   'Key'    => $database_filename,
+		]);
 
-			$result = $s3->getObject([
-			   'Bucket' => $selected_s3_bucket,
-			   'Key'    => $filename,
-			   // 'SaveAs' => $wp_upload_dir['basedir']."/".$file['file']
-			]);
+		$file_on_s3 = $result->toArray();
 
-			$file_on_s3 = $result->toArray();
+		$remote_file_datetime = $file_on_s3['LastModified'];
 
-			$remote_file_datetime = $file_on_s3['LastModified'];
+		$local_file_date_object = new \DateTime( );
 
-			$local_file_date_object = new \DateTime( );
+		$time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $local_file_date_object->getTimestamp() );
 
-			$time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $local_file_date_object->getTimestamp() );
+		if( !isset( $assoc_args['sync'] ) ){
+
+			// add if to change language if it's old or new
+			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
+
+		}
+
+		if( $assoc_args['sync'] == 'push' ){
 
 			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
 
+			// Transfer the file to S3
+            $success = false;
 
-		
+
+
+			die();
+
+			// Check to see if the backup folder exists
+	        if (!file_exists( $wp_upload_dir['basedir'] . "/database-backups/" )) {
+	            mkdir( $wp_upload_dir['basedir'] . "/database-backups/" ,0755 );
+	            echo \WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
+	        };
+
+
+
+
+
+			\WP_CLI::log( " > Backing up database to" . $database_filename . "' 💾" );
+
+	        // Create a backup with a file name involving the datestamp and a rand number to make it harder to
+	        // guess the backup filenames and reduce the risk of being able to download backups
+	        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename . " --allow-root --path=".ABSPATH);
+
+
+
+            try {
+
+                $result = $s3->putObject(array(
+                    'Bucket' => $selected_s3_bucket,
+                    'Key'    => $database_filename,
+                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename
+                ));
+
+                $success = true;
+
+			} catch ( S3 $e ) {
+    			echo " > There was an error uploading the backup database 😕";
+    		}
+
+
+
+
 		}
 
 	}
