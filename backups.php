@@ -586,13 +586,13 @@ class Backups_Commands extends \WP_CLI_Command {
 		// Define filenames and paths for backup
 		// ASTODO should these be bundled into helper methods?
 		$database_filename = 'development.sql';
-		$database_dir_relative = '/data/' . $database_filename;
-		$database_dir_full = get_home_path() . '/data/';
+		$database_dir_relative = 'data/' . $database_filename;
+		$database_dir_full = get_home_path() . 'data/';
 		$database_output_path = $database_dir_full . $database_filename;
 
 		$selected_s3_bucket = $this->get_selected_s3_bucket();
 
-		\WP_CLI::log( "Checking S3 for status of thedevelopment DB 📡" );
+		\WP_CLI::log( "Checking S3 for status of the development DB 📡" );
 
 		$result = $s3->getObject([
 		   'Bucket' => $selected_s3_bucket,
@@ -613,10 +613,10 @@ class Backups_Commands extends \WP_CLI_Command {
 			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
 
 			\WP_CLI::log( "" );
-			\WP_CLI::log( "To ⬆️  upload and overwrite with YOUR current local database to S3, run:" );
+			\WP_CLI::log( "To ⬆ upload and overwrite with YOUR current local database to S3, run:" );
 			\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=push" );
 			\WP_CLI::log( "" );
-			\WP_CLI::log( "To ⬇️  download this file from S3, run:" );
+			\WP_CLI::log( "To ⬇ download this file from S3, run:" );
 			\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=pull" );
 
 		}
@@ -640,7 +640,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	        $output = shell_exec( "wp db export " . $database_output_path . " --allow-root --path=".ABSPATH);
 
-			// ASTODO putting an object could be extracted
+			// ASTODO 'putting' an object could be extracted
             try {
 
                 $result = $s3->putObject(array(
@@ -650,6 +650,52 @@ class Backups_Commands extends \WP_CLI_Command {
                 ));
 
                 $success = true;
+
+			} catch ( S3 $e ) {
+    			echo " > There was an issue uploading the backup database 😕";
+    		}
+
+		}
+
+
+		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
+
+			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
+
+			if ( file_exists( $database_output_path ) ) {
+				\WP_CLI::confirm( "Are you sure you want to overwrite the local sql file?", $assoc_args );
+			}else{
+				echo \WP_CLI::colorize( "%yNo database currently exist locally, so nothing will be overwritten%n\n");
+			}
+			// Transfer the file to S3
+            $success = false;
+
+			// Check to see if the backup folder exists
+			// ASTODO this should be extracted
+			if ( !file_exists( $database_dir_full ) ) {
+				mkdir( $database_dir_full ,0755 );
+				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
+			};
+
+			\WP_CLI::log( " > Saving remote database to " . $database_filename . "' on your machine 💾" );
+
+
+
+			// ASTODO 'putting' an object could be extracted
+            try {
+
+
+
+				$result = $s3->getObject([
+				   'Bucket' => $selected_s3_bucket,
+				   'Key'    => $database_dir_relative,
+				   'SaveAs' => $database_output_path
+				]);
+
+
+
+				\WP_CLI::log( \WP_CLI::colorize( "%gSynced: ".$file['file'] . "%n%y - ⬇ downloaded from S3%n" ));
+
 
 			} catch ( S3 $e ) {
     			echo " > There was an issue uploading the backup database 😕";
