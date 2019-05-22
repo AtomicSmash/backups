@@ -6,6 +6,7 @@ This plugin is for backing up a WordPress website to Amazon S3.
     - Saves a local database dump with an obscure file name.
     - Syncs local database with S3.
     - Removes local copy to reduce wasted HDD space.
+    - Local development databases can be synced as well.
 - Media library backup
 	- Two way sync of uploads folder and Amazon S3.
 	- This can be used for backing up live websites but also for syncing local development assets between developers.
@@ -152,6 +153,9 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 - Add countdown to upload and download lines
 
 # Changelog
+
+= 0.0.6 =
+* Added local development database backups
 
 = 0.0.5 =
 * Updated readme
