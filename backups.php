@@ -581,12 +581,6 @@ class Backups_Commands extends \WP_CLI_Command {
 	 */
 	public function development_sql_sync( $args, $assoc_args ){
 
-		echo "<pre>";
-		print_r($args);
-		echo "</pre>";
-
-
-
 		$s3 = $this->connect_to_s3();
 
 		// Define filenames and paths for backup
@@ -618,8 +612,12 @@ class Backups_Commands extends \WP_CLI_Command {
 			// add if to change language if it's old or new
 			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
 
-			\WP_CLI::log( " - To ⬆️  upload a new file, run 'wp backups development_sql_sync --sync-direction=push'" );
-			\WP_CLI::log( " - To ⬇️  download this file from S3, run 'wp backups development_sql_sync --sync-direction=pull'" );
+			\WP_CLI::log( "" );
+			\WP_CLI::log( "To ⬆️  upload and overwrite with YOUR current local database to S3, run:" );
+			\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=push" );
+			\WP_CLI::log( "" );
+			\WP_CLI::log( "To ⬇️  download this file from S3, run:" );
+			\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=pull" );
 
 		}
 
