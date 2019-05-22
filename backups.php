@@ -19,7 +19,6 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 
-
 /**
  * Backup your WordPress site
  *
@@ -252,7 +251,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		// 	return WP_CLI::error( "Config details missing" );
 		// }
 
-		//ASTODO move this to to main backup command
+		//ASTODO extract this to a check method
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
             echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
@@ -266,6 +265,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		$missing_files = $this->find_files_to_sync();
 
+		// ASTODO this should be a CLI option
 	    $direction = 'both';
 
 
@@ -636,7 +636,6 @@ class Backups_Commands extends \WP_CLI_Command {
 				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
 			};
 
-
 			\WP_CLI::log( " > Backing up database to " . $database_filename . "' 💾" );
 
 	        $output = shell_exec( "wp db export " . $database_output_path . " --allow-root --path=".ABSPATH);
@@ -660,23 +659,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	}
 
-
 }
 
-/**
- * Add life cycle policy to the SQL folder. This will help reduce file build up
- *
- * ## OPTIONS
- *
- * <number_of_days>
- * : Name of bucket to create
- *
- * ## EXAMPLES
- *
- *     $ wp add_lifecycle
- *     Success: Will sync all uploads to S3
- *
- */
 \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
 
 };
