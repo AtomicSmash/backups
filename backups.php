@@ -609,8 +609,11 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		// If no options are provided, just return the timestamp
 		if( !isset( $assoc_args['sync-direction'] ) ){
+
+			echo \WP_CLI::colorize( "%yNo sync direction set, so just checking status of remote database.%n\n");
+
 			// add if to change language if it's old or new
-			\WP_CLI::success( "Remote development SQL file is ". $time_diff ." old." );
+			\WP_CLI::log( "Remote development SQL file is ". $time_diff ." old." );
 
 			\WP_CLI::log( "" );
 			\WP_CLI::log( "To ⬆ upload and overwrite with YOUR current local database to S3, run:" );
@@ -694,7 +697,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 
 
-				\WP_CLI::log( \WP_CLI::colorize( "%gSynced: ".$file['file'] . "%n%y - ⬇ downloaded from S3%n" ));
+				\WP_CLI::log( \WP_CLI::colorize( "%gSynced: " . $database_filename . "%n%y - ⬇ downloaded from S3%n" ));
 
 
 			} catch ( S3 $e ) {
