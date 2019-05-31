@@ -29,6 +29,23 @@ Examples
 	wp backups backup --type=database
 	- Use this to dump the DB and sync with S3
 
+
+### wp backups development_sql_sync
+
+Examples
+
+    wp backups development_sql_sync
+    - This checks the status of the remote development database
+
+    wp backups development_sql_sync --sync-direction=push
+    - This checks the status of the remote development database
+    - Then provides the option to overwrite the remote database with what is available locally
+
+    wp backups development_sql_sync --sync-direction=pull
+    - This checks the status of the remote development database
+    - Then provides the option to overwrite the local database with what is available on S3
+
+
 ## Installation
 
 #### 1. Add the Wordpress plugin to your composer file by navigating to your project and running this inside a terminal:
@@ -150,11 +167,11 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 - Backup stats
 - Added 'restore' functionality
-- Add countdown to upload and download lines
+
 
 # Changelog
 
-= 0.0.6 =
+= 0.1.0 =
 * Added local development database backups
 
 = 0.0.5 =
