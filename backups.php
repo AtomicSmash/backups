@@ -45,7 +45,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
 		if( $selected_s3_bucket == "" ){
-			\WP_CLI::error('No bucket selected, please run through setup process');
+			\WP_CLI::error('No bucket selected, please run through setup process by running "wp backups select_bucket"');
 		}
 
         return $selected_s3_bucket;
@@ -155,12 +155,16 @@ class Backups_Commands extends \WP_CLI_Command {
 			$selected_s3_bucket = $args[0];
 			update_option( 'backups_s3_selected_bucket', $selected_s3_bucket, 0 );
 			\WP_CLI::success( "Selected bucket updated" );
+			echo \WP_CLI::colorize( "%PYou can now run 'wp backups backup' to start backing up your site %n\n");
+			echo \WP_CLI::colorize( "%YOr 'wp backups development_sql_sync' to sync your local development DB%n\n");
 			return 1;
 		}
 
 		// Test if bucket has not yet been selected
 		if( $selected_s3_bucket == "" ){
 			echo \WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
+			echo \WP_CLI::colorize( "%RPlease re-run 'wp backups select_bucket' followed by the bucket name. %n\n");
+			echo \WP_CLI::colorize( "%PFor example: 'wp backups select_bucket website.backup'%n\n");
 		}
 
 		echo \WP_CLI::colorize( "%YAvailable buckets:%n\n");
@@ -609,20 +613,19 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( $remote_database_found ){
 
+			$current_time = new \DateTime();
 			$file_on_s3 = $result->toArray();
 			$remote_file_datetime = $file_on_s3['LastModified'];
-			$local_file_date_object = new \DateTime( );
-			$time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $local_file_date_object->getTimestamp() );
-			$time_diff_line = "Remote development SQL file is " . $time_diff . " old.";
+			$remote_time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $current_time->getTimestamp() );
+			$remote_time_diff_line = "Remote development SQL file is " . $remote_time_diff . " old.";
+
+
+			//ASTODO Add time diff for local file
+
 
 		}else{
-			$time_diff_line = "No remote DB found";
+			$remote_time_diff_line = "No remote DB found";
 		}
-
-
-		// else{
-		// 	$time_diff = 'No remote database found';
-		// }
 
 		// If no options are provided, just return the timestamp
 		if( !isset( $assoc_args['sync-direction'] ) ){
@@ -630,7 +633,7 @@ class Backups_Commands extends \WP_CLI_Command {
 			echo \WP_CLI::colorize( "%yNo sync direction set, so just checking status of remote database:%n\n");
 
 			// add if to change language if it's old or new
-			\WP_CLI::log( $time_diff_line );
+			\WP_CLI::log( $remote_time_diff_line );
 
 			\WP_CLI::log( "" );
 			\WP_CLI::log( "To ⬆ upload your CURRENT local database to S3, run:" );
@@ -645,7 +648,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'push' ){
 
-			\WP_CLI::log( $time_diff_line );
+			\WP_CLI::log( $remote_time_diff_line );
 
 			if( $remote_database_found ){
 				\WP_CLI::confirm( "Are you sure you want to overwrite the remote database?", $assoc_args );
@@ -698,7 +701,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
 
-			\WP_CLI::success( $time_diff_line );
+			\WP_CLI::success( $remote_time_diff_line );
 
 			if ( file_exists( $database_output_path ) ) {
 				\WP_CLI::confirm( "Are you sure you want to overwrite the local sql file?", $assoc_args );
