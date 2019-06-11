@@ -3,15 +3,17 @@
 Plugin Name: Backups
 Plugin URI: http://www.atomicsmash.co.uk
 Description: Backup your site to Amazon S3
-Version: 0.0.5
+Version: 0.1.0
 Author: Atomic Smash
 Author URI: https://www.atomicsmash.co.uk
 */
 
-namespace BACKUPS;
+namespace Backups;
+
+require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 use Aws\S3\S3Client;
-use Aws\S3\Exception\S3Exception;
+use Aws\S3\Exception\S3Exception as S3;
 
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
@@ -26,7 +28,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	private function connect_to_s3(){
 
-        $s3 = new S3Client([
+		$s3 = new S3Client([
             'version'     => 'latest',
             'region'      => BACKUPS_S3_REGION,
             'credentials' => [
@@ -36,6 +38,17 @@ class Backups_Commands extends \WP_CLI_Command {
         ]);
 
         return $s3;
+    }
+
+	private function get_selected_s3_bucket(){
+
+		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+		if( $selected_s3_bucket == "" ){
+			\WP_CLI::error('No bucket selected, please run through setup process by running "wp backups select_bucket"');
+		}
+
+        return $selected_s3_bucket;
     }
 
 	private function check_config_details_exist(){
@@ -86,7 +99,7 @@ class Backups_Commands extends \WP_CLI_Command {
                 $result = $s3->createBucket([
                     'Bucket' => $bucket_name . ".backup"
                 ]);
-            } catch (\Aws\S3\Exception\S3Exception $e) {
+			} catch ( S3 $e ) {
                 echo \WP_CLI::colorize( "%rThere was a problem creating the bucket. It might already exist 🤔%n\n");
                 $creation_success = false;
             }
@@ -115,7 +128,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
     	try {
             $result = $s3->listBuckets(array());
-        } catch(Aws\S3\Exception\S3Exception $e) {
+		} catch ( S3 $e ) {
             echo \WP_CLI::warning( "There was an error connecting to S3 😣\n\nThis was the error:\n" );
             echo $e->getAwsErrorCode()."\n";
             return false;
@@ -142,11 +155,16 @@ class Backups_Commands extends \WP_CLI_Command {
 			$selected_s3_bucket = $args[0];
 			update_option( 'backups_s3_selected_bucket', $selected_s3_bucket, 0 );
 			\WP_CLI::success( "Selected bucket updated" );
+			echo \WP_CLI::colorize( "%PYou can now run 'wp backups backup' to start backing up your site %n\n");
+			echo \WP_CLI::colorize( "%YOr 'wp backups development_sql_sync' to sync your local development DB%n\n");
+			return 1;
 		}
 
 		// Test if bucket has not yet been selected
 		if( $selected_s3_bucket == "" ){
 			echo \WP_CLI::colorize( "%YNo bucket is currently selected.%n\n");
+			echo \WP_CLI::colorize( "%RPlease re-run 'wp backups select_bucket' followed by the bucket name. %n\n");
+			echo \WP_CLI::colorize( "%PFor example: 'wp backups select_bucket website.backup'%n\n");
 		}
 
 		echo \WP_CLI::colorize( "%YAvailable buckets:%n\n");
@@ -157,14 +175,13 @@ class Backups_Commands extends \WP_CLI_Command {
         //ASTODO this should be the built in config_check function
 		try {
 			$result = $s3->listBuckets( array() );
-		}
-
-		//catch S3 exception
-		catch( Aws\S3\Exception\S3Exception $e ) {
+		}catch( S3 $e ) {
 			$connected_to_S3 = false;
-			// echo 'Message: ' .$e->getMessage();
 		};
         //ASTODO END replace
+
+
+
 
 		if( $connected_to_S3 == true ){
 
@@ -203,9 +220,6 @@ class Backups_Commands extends \WP_CLI_Command {
 	 *     $ wp backups backup
      *     Success: Will sync media and database to S3
      *
-	 *     $ wp backups backup --type=all
-	 *     Success: Will sync media and database to S3
-     *
      *     $ wp backups backup --type=database
 	 *     Success: Will sync the database to S3
      *
@@ -215,8 +229,7 @@ class Backups_Commands extends \WP_CLI_Command {
      */
 	public function backup( $args, $assoc_args ){
 
-		if( empty( $assoc_args ) ){
-			\WP_CLI::log( "You haven't defined what to sync. So using backing up media and database!" );
+		if( ! isset( $assoc_args['type'] ) ){
 			$assoc_args['type'] = "all";
 		}
 
@@ -232,17 +245,6 @@ class Backups_Commands extends \WP_CLI_Command {
 
     /**
      * Sync files to S3. You can also just sync in one direction, this is good for backups
-     *
-     * ## OPTIONS
-     *
-     * [--direction=<up-or-down>]
-     * : Sync up to S3, or pull down from S3
-     *
-     * ## EXAMPLES
-     *
-     *     $ wp sync
-     *     Success: Will sync all uploads to S3
-     *
      */
 	private function backup_media( $args, $assoc_args ) {
 
@@ -253,7 +255,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		// 	return WP_CLI::error( "Config details missing" );
 		// }
 
-		//ASTODO move this to to main backup command
+		//ASTODO extract this to a check method
         if( $selected_s3_bucket == "" ){
             echo WP_CLI::colorize( "%YNo bucket is currently selected. Run %n");
             echo WP_CLI::colorize( "%r'wp backups create_bucket'%n");
@@ -267,6 +269,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		$missing_files = $this->find_files_to_sync();
 
+		// ASTODO this should be a CLI option
 	    $direction = 'both';
 
 
@@ -333,7 +336,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			}
 
-		} catch (Aws\S3\Exception\S3Exception $e) {
+		} catch ( S3 $e ) {
 			echo "There was an error uploading the file.<br><br> Exception: $e";
 		}
 
@@ -371,6 +374,8 @@ class Backups_Commands extends \WP_CLI_Command {
 			foreach ($iterator as $object) {
 
 				if ( strpos( $object['Key'], 'database-backups' ) === false ) {
+					// echo $object['Key'] . "\n";
+
 					$found_files_remotely[] = $object['Key'];
 				}
 
@@ -456,14 +461,21 @@ class Backups_Commands extends \WP_CLI_Command {
             echo \WP_CLI::colorize( "%yThe directory 'wp-content/uploads/database-backups/' was successfully created.%n\n");
         };
 
-        // generate a hash based on the date and a random number
-        $hashed_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+		// if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
+		// 	// generate a hash based on the date and a random number
+	    //     $database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+		// }else{
+		// 	$database_filename = 'development.sql';
+		// }
 
-		\WP_CLI::log( " > Backing up database to '/database-backups/" . $hashed_filename . "' 💾" );
+		$database_filename = hash( 'ripemd160', date('ymd-h:i:s') . rand( 1, 99999 ) ) . ".sql";
+
+
+		\WP_CLI::log( " > Backing up database to '/database-backups/" . $database_filename . "' 💾" );
 
         // Create a backup with a file name involving the datestamp and a rand number to make it harder to
         // guess the backup filenames and reduce the risk of being able to download backups
-        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename . " --allow-root --path=".ABSPATH);
+        $output = shell_exec( "wp db export " . $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename . " --allow-root --path=".ABSPATH);
 
         $s3 = $this->connect_to_s3();
 
@@ -483,23 +495,22 @@ class Backups_Commands extends \WP_CLI_Command {
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
                     'Key'    => "database-backups/".date('d-m-Y--h:i:s').".sql",
-                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename
+                    'SourceFile' =>  $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename
                 ));
 
                 $success = true;
 
-            } catch (Aws\S3\Exception\S3Exception $e) {
+			} catch ( S3 $e ) {
     			echo " > There was an error uploading the backup database 😕";
     		}
 
             // If successfully transfered, delete local copy
 
         }
-
-        $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $hashed_filename );
-
-		\WP_CLI::log( " > Deleting local copy of DB 🗑" );
-
+		if( ! isset( $assoc_args['dev'] ) || $assoc_args['dev'] != true ){
+	        $output = shell_exec( "rm -rf  " . $wp_upload_dir['basedir'] . "/database-backups/" . $database_filename );
+			\WP_CLI::log( " > Deleting local copy of DB 🗑" );
+		}
 
 	    if( $success == true ){
             return \WP_CLI::success( "DB backup complete! ✅" );
@@ -561,22 +572,175 @@ class Backups_Commands extends \WP_CLI_Command {
 
     }
 
+
+
+	/**
+	 * Sync local development SQL
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--sync-direction=<type>]
+	 * : Direction to push or pull the development DB to AWS
+	 *
+	 */
+	public function development_sql_sync( $args, $assoc_args ){
+
+		$s3 = $this->connect_to_s3();
+
+		// Define filenames and paths for backup
+		// ASTODO should these be bundled into helper methods?
+		$database_filename = 'development.sql';
+		$database_dir_relative = 'data/' . $database_filename;
+		$database_dir_full = get_home_path() . 'data/';
+		$database_output_path = $database_dir_full . $database_filename;
+
+		$selected_s3_bucket = $this->get_selected_s3_bucket();
+
+		\WP_CLI::log( "Checking S3 for status of the development DB 📡" );
+
+		// Check to see if a remote database can be found
+		$remote_database_found = false;
+
+		try {
+			$result = $s3->getObject([
+			   'Bucket' => $selected_s3_bucket,
+			   'Key'    => $database_dir_relative,
+			]);
+			$remote_database_found = true;
+		} catch ( S3 $e ) {
+			$remote_database_found = false;
+		}
+
+		if( $remote_database_found ){
+
+			$current_time = new \DateTime();
+			$file_on_s3 = $result->toArray();
+			$remote_file_datetime = $file_on_s3['LastModified'];
+			$remote_time_diff = human_time_diff( $remote_file_datetime->getTimestamp(), $current_time->getTimestamp() );
+			$remote_time_diff_line = "Remote development SQL file is " . $remote_time_diff . " old.";
+
+
+			//ASTODO Add time diff for local file
+
+
+		}else{
+			$remote_time_diff_line = "No remote DB found";
+		}
+
+		// If no options are provided, just return the timestamp
+		if( !isset( $assoc_args['sync-direction'] ) ){
+
+			echo \WP_CLI::colorize( "%yNo sync direction set, so just checking status of remote database:%n\n");
+
+			// add if to change language if it's old or new
+			\WP_CLI::log( $remote_time_diff_line );
+
+			\WP_CLI::log( "" );
+			\WP_CLI::log( "To ⬆ upload your CURRENT local database to S3, run:" );
+			\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=push" );
+
+	 		if( $remote_database_found ){
+				\WP_CLI::log( "" );
+				\WP_CLI::log( "To ⬇ download this file from S3, run:" );
+				\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=pull" );
+			}
+		}
+
+		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'push' ){
+
+			\WP_CLI::log( $remote_time_diff_line );
+
+			if( $remote_database_found ){
+				\WP_CLI::confirm( "Are you sure you want to overwrite the remote database?", $assoc_args );
+			}else{
+				\WP_CLI::confirm( "Are you sure you want to upload the current local database?", $assoc_args );
+			}
+
+
+
+			// Transfer the file to S3
+            $success = false;
+
+			// Check to see if the backup folder exists
+			if (!file_exists( $database_dir_full )) {
+				mkdir( $database_dir_full ,0755 );
+				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
+			};
+
+			\WP_CLI::log( " > Backing up database to " . $database_dir_relative . "' 💾" );
+
+	        $output = shell_exec( "wp db export " . $database_output_path . " --allow-root --path=".ABSPATH);
+
+			\WP_CLI::log( " > Uploading DB" );
+
+			// ASTODO 'putting' an object could be extracted
+            try {
+
+                $result = $s3->putObject(array(
+                    'Bucket' => $selected_s3_bucket,
+                    'Key'    => $database_dir_relative,
+                    'SourceFile' =>  $database_output_path
+                ));
+
+                $success = true;
+
+			} catch ( S3 $e ) {
+				$success = false;
+    		}
+
+			if( $success ){
+
+				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_dir_relative . "%n%y - ⬆ uploaded to S3%n" ));
+
+			}else{
+				\WP_CLI::log( " > There was an issue uploading the backup database 😕" );
+			}
+
+		}
+
+
+		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
+
+			\WP_CLI::success( $remote_time_diff_line );
+
+			if ( file_exists( $database_output_path ) ) {
+				\WP_CLI::confirm( "Are you sure you want to overwrite the local sql file?", $assoc_args );
+			}else{
+				echo \WP_CLI::colorize( "%yNo database currently exist locally, so nothing will be overwritten%n\n");
+			}
+			// Transfer the file to S3
+            $success = false;
+
+			// Check to see if the backup folder exists
+			// ASTODO this should be extracted
+			if ( !file_exists( $database_dir_full ) ) {
+				mkdir( $database_dir_full ,0755 );
+				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
+			};
+
+			\WP_CLI::log( " > Saving remote database to " . $database_filename . "' on your machine 💾" );
+
+			// ASTODO 'putting' an object could be extracted
+            try {
+
+				$result = $s3->getObject([
+				   'Bucket' => $selected_s3_bucket,
+				   'Key'    => $database_dir_relative,
+				   'SaveAs' => $database_output_path
+				]);
+
+				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_dir_relative . "%n%y - ⬇ downloaded from S3%n" ));
+
+			} catch ( S3 $e ) {
+    			echo " > There was an issue uploading the backup database 😕";
+    		}
+
+		}
+
+	}
+
 }
 
-/**
- * Add life cycle policy to the SQL folder. This will help reduce file build up
- *
- * ## OPTIONS
- *
- * <number_of_days>
- * : Name of bucket to create
- *
- * ## EXAMPLES
- *
- *     $ wp add_lifecycle
- *     Success: Will sync all uploads to S3
- *
- */
 \WP_CLI::add_command( 'backups', '\BACKUPS\Backups_Commands' );
 
 };
