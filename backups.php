@@ -10,7 +10,6 @@ Author URI: https://www.atomicsmash.co.uk
 
 namespace Backups;
 
-// require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception as S3;
@@ -18,6 +17,10 @@ use Aws\S3\Exception\S3Exception as S3;
 if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
+
+if ( defined( 'BACKUP_DEVELOPMENT' )){
+	require( dirname( __FILE__ ) . '/vendor/autoload.php' );
+}
 
 /**
  * Backup your WordPress site
