@@ -10,7 +10,7 @@ Author URI: https://www.atomicsmash.co.uk
 
 namespace Backups;
 
-require( dirname( __FILE__ ) . '/vendor/autoload.php' );
+// require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception as S3;
