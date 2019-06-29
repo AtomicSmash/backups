@@ -168,6 +168,9 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 - Backup stats
 - Added 'restore' functionality
 
+# Running tests
+
+Navigate to the plugin and run "vendor/bin/phpunit tests"
 
 # Changelog
 
