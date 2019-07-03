@@ -654,7 +654,6 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'push' ){
 
-			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			\WP_CLI::log( $remote_time_diff_line );
 
@@ -664,7 +663,7 @@ class Backups_Commands extends \WP_CLI_Command {
 				\WP_CLI::confirm( "Are you sure you want to upload the current local database?", $assoc_args );
 			}
 
-
+			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			// Transfer the file to S3
             $success = false;
@@ -709,7 +708,6 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
 
-			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			\WP_CLI::success( $remote_time_diff_line );
 
@@ -718,6 +716,9 @@ class Backups_Commands extends \WP_CLI_Command {
 			}else{
 				echo \WP_CLI::colorize( "%yNo database currently exist locally, so nothing will be overwritten%n\n");
 			}
+
+			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
+
 			// Transfer the file to S3
             $success = false;
 
@@ -753,7 +754,7 @@ class Backups_Commands extends \WP_CLI_Command {
 	private function backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder ){
 
 		//Backup local
-		$output = shell_exec( "cp ".$database_output_path." ".$database_folder."development-".date('dmy-h:i:s').".sql" );
+		$output = shell_exec( "cp ".$database_output_path." ".$database_folder."development-".date('dmy-h:i:wors').".sql" );
 
 		//Backup S3
 		try {
@@ -761,7 +762,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			$result = $s3->copyObject(array(
 				'Bucket' => $selected_s3_bucket,
-				'Key'    => $database_folder."development-".date('dmy-h:i:s').".sql",
+				'Key'    => $database_folder."development-".date('dmy-h:i:wors').".sql",
 				'CopySource' =>  $selected_s3_bucket . "/" . $database_output_path
 			));
 
