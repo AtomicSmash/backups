@@ -596,10 +596,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		// Define filenames and paths for backup
 		// ASTODO should these be bundled into helper methods?
+		$database_folder = 'data/';
 		$database_filename = 'development.sql';
-		$database_dir_relative = 'data/' . $database_filename;
-		$database_dir_full = get_home_path() . 'data/';
-		$database_output_path = $database_dir_full . $database_filename;
+		$database_output_path = $database_folder . $database_filename;
 
 		$selected_s3_bucket = $this->get_selected_s3_bucket();
 
@@ -611,7 +610,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		try {
 			$result = $s3->getObject([
 			   'Bucket' => $selected_s3_bucket,
-			   'Key'    => $database_dir_relative,
+			   'Key'    => $database_output_path,
 			]);
 			$remote_database_found = true;
 		} catch ( S3 $e ) {
@@ -655,6 +654,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'push' ){
 
+			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
+
 			\WP_CLI::log( $remote_time_diff_line );
 
 			if( $remote_database_found ){
@@ -669,12 +670,12 @@ class Backups_Commands extends \WP_CLI_Command {
             $success = false;
 
 			// Check to see if the backup folder exists
-			if (!file_exists( $database_dir_full )) {
-				mkdir( $database_dir_full ,0755 );
+			if (!file_exists( $database_folder )) {
+				mkdir( $database_folder ,0755 );
 				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
 			};
 
-			\WP_CLI::log( " > Backing up database to " . $database_dir_relative . "' 💾" );
+			\WP_CLI::log( " > Backing up database to " . $database_output_path . "' 💾" );
 
 	        $output = shell_exec( "wp db export " . $database_output_path . " --allow-root --path=".ABSPATH);
 
@@ -685,7 +686,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
                 $result = $s3->putObject(array(
                     'Bucket' => $selected_s3_bucket,
-                    'Key'    => $database_dir_relative,
+                    'Key'    => $database_output_path,
                     'SourceFile' =>  $database_output_path
                 ));
 
@@ -697,7 +698,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			if( $success ){
 
-				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_dir_relative . "%n%y - ⬆ uploaded to S3%n" ));
+				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_output_path . "%n%y - ⬆ uploaded to S3%n" ));
 
 			}else{
 				\WP_CLI::log( " > There was an issue uploading the backup database 😕" );
@@ -707,6 +708,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
+
+			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			\WP_CLI::success( $remote_time_diff_line );
 
@@ -720,8 +723,8 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			// Check to see if the backup folder exists
 			// ASTODO this should be extracted
-			if ( !file_exists( $database_dir_full ) ) {
-				mkdir( $database_dir_full ,0755 );
+			if ( !file_exists( $database_folder ) ) {
+				mkdir( $database_folder ,0755 );
 				echo \WP_CLI::colorize( "%yThe directory '/data/' was successfully created.%n\n");
 			};
 
@@ -732,17 +735,58 @@ class Backups_Commands extends \WP_CLI_Command {
 
 				$result = $s3->getObject([
 				   'Bucket' => $selected_s3_bucket,
-				   'Key'    => $database_dir_relative,
+				   'Key'    => $database_output_path,
 				   'SaveAs' => $database_output_path
 				]);
 
-				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_dir_relative . "%n%y - ⬇ downloaded from S3%n" ));
+				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_output_path . "%n%y - ⬇ downloaded from S3%n" ));
 
 			} catch ( S3 $e ) {
     			echo " > There was an issue uploading the backup database 😕";
     		}
 
 		}
+
+	}
+
+	//ASTODO get all this variables into the cronstruct
+	private function backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder ){
+
+		//Backup local
+		$output = shell_exec( "cp ".$database_output_path." ".$database_folder."development-".date('dmy-h:i:s').".sql" );
+
+		//Backup S3
+		try {
+			// s3.copyObject(from_bucket, object_key, to_bucket, object_key);
+
+			$result = $s3->copyObject(array(
+				'Bucket' => $selected_s3_bucket,
+				'Key'    => $database_folder."development-".date('dmy-h:i:s').".sql",
+				'CopySource' =>  $selected_s3_bucket . "/" . $database_output_path
+			));
+
+			$success = true;
+
+		} catch ( S3 $e ) {
+
+			echo $e->getAwsErrorCode()."\n";
+
+			// echo "<pre>";
+			// print_r($e);
+			// echo "</pre>";
+
+
+
+			$success = false;
+		}
+
+		// if( $success ){
+		//
+		// 	\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_output_path . "%n%y - ⬆ uploaded to S3%n" ));
+		//
+		// }else{
+		// 	\WP_CLI::log( " > There was an issue uploading the backup database 😕" );
+		// }
 
 	}
 
