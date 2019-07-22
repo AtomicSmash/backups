@@ -173,6 +173,7 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 = 0.1.0 =
 * Added local development database backups
+* Added better plugin development detection by looking for the existence of an vendor/autoload.php file
 
 = 0.0.5 =
 * Updated readme

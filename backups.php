@@ -18,8 +18,9 @@ if (!defined('ABSPATH'))exit; //Exit if accessed directly
 
 if ( defined( 'WP_CLI' ) && WP_CLI && !class_exists( 'Backups_Commands' ) ) {
 
-if ( defined( 'BACKUP_DEVELOPMENT' )){
-	require( dirname( __FILE__ ) . '/vendor/autoload.php' );
+$autoload = dirname( __FILE__ ) . '/vendor/autoload.php';
+if ( file_exists( $autoload ) ) {
+	require_once $autoload;
 }
 
 /**
