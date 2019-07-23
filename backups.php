@@ -46,10 +46,17 @@ class Backups_Commands extends \WP_CLI_Command {
 
 	private function get_selected_s3_bucket(){
 
-		$selected_s3_bucket = get_option('backups_s3_selected_bucket');
 
-		if( $selected_s3_bucket == "" ){
-			\WP_CLI::error('No bucket selected, please run through setup process by running "wp backups select_bucket"');
+		if ( defined('BACKUPS_S3_BUCKET') ) {
+
+			$selected_s3_bucket = BACKUPS_S3_BUCKET;
+
+		}else{
+			$selected_s3_bucket = get_option('backups_s3_selected_bucket');
+
+			if( $selected_s3_bucket == "" ){
+				\WP_CLI::error('No bucket selected, please run through setup process by running "wp backups select_bucket"');
+			}
 		}
 
         return $selected_s3_bucket;
