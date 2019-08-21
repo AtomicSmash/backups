@@ -658,6 +658,9 @@ class Backups_Commands extends \WP_CLI_Command {
 				\WP_CLI::log( "To ⬇ download this file from S3, run:" );
 				\WP_CLI::log( "	wp backups development_sql_sync --sync-direction=pull" );
 			}
+
+			return;
+
 		}
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'push' ){
@@ -667,11 +670,11 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			if( $remote_database_found ){
 				\WP_CLI::confirm( "Are you sure you want to overwrite the remote database?", $assoc_args );
+				$this->backup_remote_development_sql_file( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
+
 			}else{
 				\WP_CLI::confirm( "Are you sure you want to upload the current local database?", $assoc_args );
 			}
-
-			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			// Transfer the file to S3
             $success = false;
@@ -716,16 +719,21 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		if( isset( $assoc_args['sync-direction'] ) && $assoc_args['sync-direction'] == 'pull' ){
 
+			if( $remote_time_diff_line == "No remote DB found" ){
+				\WP_CLI::error( "No remote databse to pull" );
+			}
 
 			\WP_CLI::success( $remote_time_diff_line );
 
 			if ( file_exists( $database_output_path ) ) {
 				\WP_CLI::confirm( "Are you sure you want to overwrite the local sql file?", $assoc_args );
+				$this->backup_local_development_sql_file( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 			}else{
 				echo \WP_CLI::colorize( "%yNo database currently exist locally, so nothing will be overwritten%n\n");
 			}
 
-			$this->backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
+
+			$this->backup_remote_development_sql_file( $s3, $selected_s3_bucket, $database_output_path, $database_folder );
 
 			// Transfer the file to S3
             $success = false;
@@ -751,26 +759,33 @@ class Backups_Commands extends \WP_CLI_Command {
 				\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_output_path . "%n%y - ⬇ downloaded from S3%n" ));
 
 			} catch ( S3 $e ) {
-    			echo " > There was an issue uploading the backup database 😕";
+    			echo " > There was an issue downloading the backup database 😕";
     		}
+
+			$this->import_development_db();
 
 		}
 
 	}
 
 	//ASTODO get all this variables into the cronstruct
-	private function backup_development_sql_files( $s3, $selected_s3_bucket, $database_output_path, $database_folder ){
+	private function backup_local_development_sql_file( $s3, $selected_s3_bucket, $database_output_path, $database_folder ){
 
 		//Backup local
-		$output = shell_exec( "cp ".$database_output_path." ".$database_folder."development-".date('dmy-h:i:wors').".sql" );
+		$output = shell_exec( "cp ".$database_output_path." ".$database_folder."development-".date('d-m-y__H-i-w').".sql" );
+
+		\WP_CLI::log( " > Local development database copied to: " . "development-".date('d-m-y__H-i-w').".sql" );
+
+	}
+
+	private function backup_remote_development_sql_file( $s3, $selected_s3_bucket, $database_output_path, $database_folder ){
 
 		//Backup S3
 		try {
-			// s3.copyObject(from_bucket, object_key, to_bucket, object_key);
 
 			$result = $s3->copyObject(array(
 				'Bucket' => $selected_s3_bucket,
-				'Key'    => $database_folder."development-".date('dmy-h:i:wors').".sql",
+				'Key'    => $database_folder."development-".date('d-m-y__H-i-w').".sql",
 				'CopySource' =>  $selected_s3_bucket . "/" . $database_output_path
 			));
 
@@ -780,24 +795,27 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			echo $e->getAwsErrorCode()."\n";
 
-			// echo "<pre>";
-			// print_r($e);
-			// echo "</pre>";
-
-
-
 			$success = false;
 		}
 
-		// if( $success ){
-		//
-		// 	\WP_CLI::log( \WP_CLI::colorize( "%g > Synced " . $database_output_path . "%n%y - ⬆ uploaded to S3%n" ));
-		//
-		// }else{
-		// 	\WP_CLI::log( " > There was an issue uploading the backup database 😕" );
-		// }
+		if( $success ){
+			\WP_CLI::log( " > Remote development database copied to: " . "development-".date('d-m-y__H-i-w').".sql" );
+		}else{
+			\WP_CLI::log( " > There was an issue backing up the remote DB" );
+		}
 
 	}
+
+
+	private function import_development_db(){
+
+		\WP_CLI::confirm( "Now you have the latest development DB, would you like to import it?" );
+
+		$output = shell_exec( "wp db import data/development.sql --allow-root --path=" . ABSPATH);
+
+	}
+
+
 
 }
 

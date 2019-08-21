@@ -65,8 +65,13 @@ define('BACKUPS_S3_REGION','eu-west-2'); //London
 define('BACKUPS_S3_ACCESS_KEY_ID','');
 define('BACKUPS_S3_SECRET_ACCESS_KEY','');
 ```
-
 You can obtain these details by creating an IAM user. Here is [our guide](https://github.com/AtomicSmash/backups/wiki/Getting-AWS-credentials) on how to setup an IAM Amazon user and get the access and secret key that you need.
+
+If you know the name of the bucket you would like to sync with, you can hard this by adding:
+
+```
+define('BACKUPS_S3_BUCKET','');
+```
 
 Commit the changes to your config.
 
@@ -174,6 +179,7 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 = 0.1.0 =
 * Added local development database backups
 * Added better plugin development detection by looking for the existence of an vendor/autoload.php file
+* There is a new BACKUPS_S3_BUCKET constant to hard code the preferred bucket
 
 = 0.0.5 =
 * Updated readme
@@ -181,7 +187,6 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 = 0.0.4 =
 * Improved UX when creating a bucket
 * FIXED issue with syncing DB backups back to local machine from S3
-* Added .cap task
 
 = 0.0.3 =
 * Added offload S3 functionality
