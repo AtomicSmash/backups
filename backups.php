@@ -813,6 +813,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
 		$output = shell_exec( "wp db import data/development.sql --allow-root --path=" . ABSPATH);
 
+		\WP_CLI::log( \WP_CLI::colorize( "%gDatabase imported%n" ));
+
+
 	}
 
 
