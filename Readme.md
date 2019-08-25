@@ -176,6 +176,9 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 # Changelog
 
+= 0.1.2 =
+* Added more exceptions for downloading data/development sql files
+
 = 0.1.1 =
 * Added exception for downloading data/development sql files
 

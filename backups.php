@@ -384,9 +384,7 @@ class Backups_Commands extends \WP_CLI_Command {
 		if( count( $iterator ) > 0 ){
 			foreach ($iterator as $object) {
 
-				if ( strpos( $object['Key'], 'database-backups' ) === false ) {
-					// echo $object['Key'] . "\n";
-
+				if ( strpos( $object['Key'], 'database-backups' ) === false && strpos( $object['Key'], 'data/development' ) === false ) {
 					$found_files_remotely[] = $object['Key'];
 				}
 
@@ -412,7 +410,7 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			//This would be nicer to have this in the RecursiveIteratorIterator
 			if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
-				if ( strpos( $path, 'database-backups' ) === false ) {
+				if ( strpos( $path, 'database-backups' ) === false && strpos( $path, 'data/development' ) === false ) {
 					$found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
 				}
 			}
