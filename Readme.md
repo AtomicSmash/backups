@@ -176,6 +176,9 @@ require( dirname( __FILE__ ) . '/vendor/autoload.php' );
 
 # Changelog
 
+= 0.1.1 =
+* Added exception for downloading data/development sql files
+
 = 0.1.0 =
 * Added local development database backups
 * Added better plugin development detection by looking for the existence of an vendor/autoload.php file

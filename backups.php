@@ -412,7 +412,9 @@ class Backups_Commands extends \WP_CLI_Command {
 
 			//This would be nicer to have this in the RecursiveIteratorIterator
 			if (isset($filetype['extension']) && !in_array($filetype['extension'], $ignore)) {
-				$found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
+				if ( strpos( $path, 'database-backups' ) === false ) {
+					$found_files_locally[] = str_replace($wp_upload_dir['basedir'].'/','',$path);
+				}
 			}
 
 		}
